@@ -10,7 +10,7 @@ server/.env
 /.pnp
 .pnp.js
 
-server/seeders
+server/seed.js
 server/logs
 
 # testing

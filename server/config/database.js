@@ -6,8 +6,8 @@ dotenv.config();
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
   host: process.env.DB_HOST,
-  dialect: "postgres",
-  logging: (msg) => logger.debug(msg), // Log query SQL ke sistem logging kita
+  dialect: process.env.DB_DIALECT,
+  logging: (msg) => logger.debug(msg), // Log query SQL ke file log
   pool: {
     max: 5,
     min: 0,

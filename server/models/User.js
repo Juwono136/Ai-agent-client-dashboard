@@ -1,3 +1,4 @@
+// models/User.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
 import bcrypt from "bcrypt";
@@ -7,7 +8,7 @@ const User = sequelize.define(
   {
     id: {
       type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4, // ID otomatis acak (aman)
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
     name: {
@@ -18,9 +19,7 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
-      validate: {
-        isEmail: true,
-      },
+      validate: { isEmail: true },
     },
     password: {
       type: DataTypes.STRING,
@@ -31,6 +30,10 @@ const User = sequelize.define(
       defaultValue: "customer",
     },
     isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
+    isFirstLogin: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
@@ -45,7 +48,6 @@ const User = sequelize.define(
   },
   {
     hooks: {
-      // Hash password otomatis sebelum disimpan ke DB
       beforeCreate: async (user) => {
         if (user.password) {
           const salt = await bcrypt.genSalt(10);
@@ -62,7 +64,6 @@ const User = sequelize.define(
   }
 );
 
-// Method untuk verifikasi password saat login
 User.prototype.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

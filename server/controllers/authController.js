@@ -1,140 +1,149 @@
-import User from "../models/User.js";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import logger from "../utils/logger.js";
-// Nanti kita tambahkan fitur kirim email di sini
+import { Op } from "sequelize";
+import User from "../models/User.js";
+import AppError from "../utils/AppError.js";
+import sendEmail from "../utils/emailService.js";
+import { getPasswordResetTemplate } from "../utils/emailTemplates.js";
+import { sendTokenResponse } from "../utils/tokenUtils.js";
 
-// Helper: Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+// --- Login User ---
+export const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    // 1. Cek apakah email dan password ada
+    if (!email || !password) {
+      return next(new AppError("Mohon masukkan email dan password.", 400));
+    }
+
+    // 2. Cari User dan Include Password (karena select false defaultnya jika ada)
+    const user = await User.findOne({ where: { email } });
+
+    // 3. Validasi User & Password
+    if (!user || !(await user.matchPassword(password))) {
+      return next(new AppError("Email atau password salah.", 401));
+    }
+
+    // 4. Cek Status Aktif
+    if (!user.isActive) {
+      return next(new AppError("Akun Anda dinonaktifkan. Silakan hubungi Admin.", 403));
+    }
+
+    // 5. Kirim Response (Panggil Utility Modular)
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Logout User (Clear Cookie) ---
+export const logout = (req, res) => {
+  res.cookie("token", "none", {
+    expires: new Date(Date.now() + 10 * 1000), // Expire dalam 10 detik
+    httpOnly: true,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Berhasil logout.",
   });
 };
 
-// @desc    Register new user (Admin can add customer)
-// @route   POST /api/auth/register
-export const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
-
+// --- Update Password (First Login / User Profile) ---
+export const updatePassword = async (req, res, next) => {
   try {
-    const userExists = await User.findOne({ where: { email } });
+    const { password } = req.body;
 
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    // User didapat dari middleware 'protect'
+    const user = await User.findByPk(req.user.id);
 
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: role || "customer",
-    });
-
-    logger.info(`New user registered: ${email}`);
-
-    res.status(201).json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user.id),
-    });
-  } catch (error) {
-    logger.error(`Register Error: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
-
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ where: { email } });
-
-    if (user && (await user.matchPassword(password))) {
-      logger.info(`User logged in: ${email}`);
-      res.json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user.id),
-      });
-    } else {
-      logger.warn(`Failed login attempt for: ${email}`);
-      res.status(401).json({ message: "Invalid email or password" });
-    }
-  } catch (error) {
-    logger.error(`Login Error: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
-
-// @desc    Forgot Password (Generate Token)
-// @route   POST /api/auth/forgot-password
-export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Generate Reset Token (Random String)
-    const resetToken = crypto.randomBytes(20).toString("hex");
-
-    // Hash token dan simpan ke database
-    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 Menit
-
+    user.password = password; // Hash otomatis via hook
+    user.isFirstLogin = false; // Matikan flag first login
     await user.save();
 
-    // TODO: Kirim Email menggunakan Nodemailer di sini
-    // Untuk sekarang kita return tokennya dulu untuk testing
-    logger.info(`Password reset requested for: ${email}`);
+    // Opsional: Kirim token baru jika ingin memperpanjang sesi setelah ganti password
+    // sendTokenResponse(user, 200, res);
 
+    // Atau cukup response sukses saja:
     res.status(200).json({
-      message: "Email sent",
-      resetTokenRaw: resetToken, // HAPUS INI DI PRODUCTION, HANYA UNTUK DEV
+      success: true,
+      message: "Password berhasil diperbarui.",
     });
   } catch (error) {
-    logger.error(`Forgot Password Error: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
+    next(error);
   }
 };
 
-// @desc    Reset Password
-// @route   PUT /api/auth/reset-password/:resetToken
-export const resetPassword = async (req, res) => {
-  const resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(req.params.resetToken)
-    .digest("hex");
-
+// --- Forgot Password ---
+export const forgotPassword = async (req, res, next) => {
   try {
+    const user = await User.findOne({ where: { email: req.body.email } });
+    if (!user) {
+      return next(new AppError("Email tidak ditemukan dalam sistem.", 404));
+    }
+
+    // Generate Random Token
+    const resetToken = crypto.randomBytes(20).toString("hex");
+
+    // Hash token dan simpan ke DB
+    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 Menit
+    await user.save();
+
+    // Buat URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const message = getPasswordResetTemplate(resetUrl);
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Reset Password - Cekat.ai",
+        html: message,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Email instruksi reset password telah dikirim.",
+      });
+    } catch (err) {
+      user.resetPasswordToken = null;
+      user.resetPasswordExpire = null;
+      await user.save();
+      return next(new AppError("Gagal mengirim email. Silakan coba lagi.", 500));
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Reset Password Final ---
+export const resetPasswordFinal = async (req, res, next) => {
+  try {
+    // Hash token dari URL untuk dicocokkan dengan DB
+    const hashedToken = crypto.createHash("sha256").update(req.params.resetToken).digest("hex");
+
     const user = await User.findOne({
       where: {
-        resetPasswordToken,
-        resetPasswordExpire: { [Sequelize.Op.gt]: Date.now() }, // Token belum expired
+        resetPasswordToken: hashedToken,
+        resetPasswordExpire: { [Op.gt]: Date.now() }, // Cek kadaluarsa
       },
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid token" });
+      return next(new AppError("Token tidak valid atau sudah kadaluarsa.", 400));
     }
 
     // Set password baru
     user.password = req.body.password;
     user.resetPasswordToken = null;
     user.resetPasswordExpire = null;
+    user.isFirstLogin = false; // Reset password dianggap sudah validasi user
     await user.save();
 
-    logger.info(`Password reset successful for user ID: ${user.id}`);
-    res.status(200).json({ message: "Password updated successfully" });
+    // Langsung login user (Kirim Token & Cookie)
+    sendTokenResponse(user, 200, res);
   } catch (error) {
-    logger.error(`Reset Password Error: ${error.message}`);
-    res.status(500).json({ message: "Server Error" });
+    next(error);
   }
 };
