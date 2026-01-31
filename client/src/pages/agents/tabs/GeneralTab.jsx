@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { FaRobot, FaCommentDots, FaExchangeAlt, FaImage, FaCloudUploadAlt } from "react-icons/fa";
 
 // Helper Component untuk Character Counter
@@ -7,8 +8,56 @@ const CharCount = ({ current, max }) => (
   </span>
 );
 
-// Terima prop baru: previewImage dan handleRemoveImage (opsional jika ingin fitur remove)
-const GeneralTab = ({ formData, handleChange, handleFileChange, previewImage }) => {
+// Terima prop baru: previewImage, handoffConfig
+const GeneralTab = ({
+  formData,
+  handleChange,
+  handleFileChange,
+  previewImage,
+  handoffConfig,
+  setHandoffConfig,
+}) => {
+  const updateHandoffConfig = (updates) => {
+    setHandoffConfig((prev) => ({ ...prev, ...updates }));
+  };
+
+  const [keywordInput, setKeywordInput] = useState("");
+  const isEditingKeywordsRef = useRef(false);
+
+  const parseKeywords = (value) => {
+    const raw = value.trim();
+    let keywords = raw
+      .split(/[,|\n]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    // Jika user tidak pakai koma, izinkan pemisah spasi
+    if (keywords.length <= 1 && raw.includes(" ")) {
+      keywords = raw.split(/\s+/).map((item) => item.trim()).filter(Boolean);
+    }
+    return keywords;
+  };
+
+  const handleKeywordInputChange = (value) => {
+    isEditingKeywordsRef.current = true;
+    setKeywordInput(value);
+    updateHandoffConfig({ keywords: parseKeywords(value) });
+  };
+
+  const handleKeywordInputBlur = () => {
+    isEditingKeywordsRef.current = false;
+    setKeywordInput((handoffConfig?.keywords || []).join(", "));
+  };
+
+  useEffect(() => {
+    if (!isEditingKeywordsRef.current) {
+      setKeywordInput((handoffConfig?.keywords || []).join(", "));
+    }
+  }, [handoffConfig?.keywords]);
+
+  const isHandoffEnabled = !!handoffConfig?.enabled;
+  const isKeywordInvalid = isHandoffEnabled && (handoffConfig?.keywords || []).length < 1;
+
   return (
     <div className="space-y-8 animate-[fadeIn_0.3s_ease-out] max-w-4xl mx-auto">
       {/* 1. IDENTITY SECTION (Tetap Sama) */}
@@ -138,26 +187,90 @@ const GeneralTab = ({ formData, handleChange, handleFileChange, previewImage }) 
         </div>
       </section>
 
-      {/* 3. HANDOFF SECTION (Tetap Sama) */}
+      {/* 3. HANDOFF SECTION (Updated) */}
       <section>
         <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b pb-2">
           <FaExchangeAlt className="text-[#1C4D8D]" /> Human Handoff
         </h3>
-        <div className="form-control">
-          <div className="flex justify-between items-center mb-1">
-            <label className="label-text font-semibold text-gray-700">
-              Agent Transfer Conditions
-            </label>
-            <CharCount current={formData.transferCondition?.length} max={750} />
+        <div className="bg-gray-50/60 border border-gray-100 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-gray-800">Aktifkan Human Handoff</h4>
+              <p className="text-xs text-gray-500">
+                Jika aktif, AI akan mengeskalasi ke manusia saat kondisi terpenuhi.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="toggle toggle-sm toggle-success"
+              checked={!!handoffConfig?.enabled}
+              onChange={(e) => updateHandoffConfig({ enabled: e.target.checked })}
+            />
           </div>
-          <textarea
-            name="transferCondition"
-            value={formData.transferCondition}
-            onChange={handleChange}
-            maxLength={750}
-            className="textarea textarea-bordered w-full rounded-lg h-24 focus:ring-1 focus:ring-[#1C4D8D]"
-            placeholder="Contoh: Jika user meminta berbicara dengan manusia..."
-          />
+
+          {handoffConfig?.enabled && (
+            <div className="grid grid-cols-1 gap-4">
+              <div className="form-control">
+                <label className="label-text font-semibold text-gray-700 mb-1">
+                  Kata Kunci Pemicu (pisahkan dengan koma)
+                </label>
+                <input
+                  type="text"
+                  value={keywordInput}
+                  onChange={(e) => handleKeywordInputChange(e.target.value)}
+                  onBlur={handleKeywordInputBlur}
+                  className={`input input-bordered w-full rounded-lg focus:ring-1 focus:ring-[#1C4D8D] ${
+                    isKeywordInvalid ? "border-red-300 focus:ring-red-400" : ""
+                  }`}
+                  placeholder="contoh: admin, cs, operator, manusia"
+                />
+                {isKeywordInvalid && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Minimal 1 kata kunci diperlukan saat human handoff aktif.
+                  </p>
+                )}
+              </div>
+
+              <div className="form-control">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="label-text font-semibold text-gray-700">
+                    Kondisi Handoff (aturan tambahan)
+                  </label>
+                  <CharCount current={handoffConfig?.conditionText?.length} max={750} />
+                </div>
+                <textarea
+                  value={handoffConfig?.conditionText || ""}
+                  onChange={(e) => updateHandoffConfig({ conditionText: e.target.value })}
+                  maxLength={750}
+                  className="textarea textarea-bordered w-full rounded-lg h-24 focus:ring-1 focus:ring-[#1C4D8D]"
+                  placeholder="Contoh: Jika user meminta berbicara dengan manusia atau kasus sensitif."
+                />
+              </div>
+
+              <div className="form-control">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="label-text font-semibold text-gray-700">
+                    Pesan Saat Dialihkan (Opsional)
+                  </label>
+                  <CharCount current={handoffConfig?.responseMessage?.length} max={300} />
+                </div>
+                <textarea
+                  value={handoffConfig?.responseMessage || ""}
+                  onChange={(e) => updateHandoffConfig({ responseMessage: e.target.value })}
+                  maxLength={300}
+                  className="textarea textarea-bordered w-full rounded-lg h-20 focus:ring-1 focus:ring-[#1C4D8D]"
+                  placeholder="Contoh: Baik, saya hubungkan Anda ke tim kami."
+                />
+              </div>
+
+              {/* <div className="text-xs text-gray-500 bg-white border border-gray-100 rounded-xl p-3">
+                Integrasi n8n: AI akan menambahkan JSON{" "}
+                <span className="font-mono">{`{"escalate": true}`}</span> saat handoff. Workflow
+                Anda sudah bisa menangkap sinyal ini tanpa perubahan besar.
+              </div> */}
+
+            </div>
+          )}
         </div>
       </section>
     </div>

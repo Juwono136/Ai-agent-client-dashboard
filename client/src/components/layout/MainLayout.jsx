@@ -70,7 +70,7 @@ const MainLayout = () => {
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={handleLogoutConfirm}
         title="Konfirmasi Logout"
-        message="Apakah Anda yakin ingin mengakhiri sesi ini?"
+        message="Apakah kamu ingin keluar dari aplikasi?"
         variant="danger" // Merah (Visual)
         confirmText="Keluar" // Teks Tombol Khusus Logout
         cancelText="Batal"

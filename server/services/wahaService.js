@@ -10,36 +10,74 @@ const HEADERS = {
   ...(API_KEY && { "X-Api-Key": API_KEY }),
 };
 
+const getWahaSession = async (sessionId) => {
+  try {
+    const response = await axios.get(`${WAHA_URL}/api/sessions/${sessionId}`, {
+      headers: HEADERS,
+    });
+    return response.data;
+  } catch (error) {
+    if (error?.response?.status === 404) return null;
+    throw error;
+  }
+};
+
+const isRecoverableStartError = async (sessionId, error) => {
+  const statusCode = error?.response?.status;
+  if (!statusCode) return false;
+
+  // Jika WAHA menolak karena sudah running / starting, anggap sukses
+  if ([400, 409, 422, 500].includes(statusCode)) {
+    try {
+      const session = await getWahaSession(sessionId);
+      if (!session) return false;
+      if (["STARTING", "SCAN_QR_CODE", "WORKING"].includes(session.status)) {
+        return true;
+      }
+    } catch (err) {
+      return false;
+    }
+
+    const rawMessage = JSON.stringify(error?.response?.data || "");
+    if (/already|running|started|start/i.test(rawMessage)) return true;
+  }
+
+  return false;
+};
+
 // Start Session & Inject Webhook URL
 export const startWahaSession = async (sessionId, webhookUrl) => {
   try {
     // 1. Cek apakah session sudah ada
-    try {
-      await axios.get(`${WAHA_URL}/api/sessions/${sessionId}`, { headers: HEADERS });
-      // Jika session sudah ada, kita pastikan config webhook-nya update
-      // Tapi untuk simplicity, kita anggap sudah oke atau user harus delete dulu
-      return;
-    } catch (err) {
-      // 404 Not Found -> Lanjut create
+    const existingSession = await getWahaSession(sessionId);
+
+    if (!existingSession) {
+      // 2. Payload Config untuk WAHA
+      const payload = {
+        name: sessionId,
+        config: {
+          proxy: null,
+          webhooks: [
+            {
+              url: webhookUrl, // <--- INI KUNCINYA (Dikirim ke n8n User)
+              events: ["message", "session.status"],
+              hmac: null,
+            },
+          ],
+        },
+      };
+
+      // 3. Create Session
+      await axios.post(`${WAHA_URL}/api/sessions`, payload, { headers: HEADERS });
     }
 
-    // 2. Payload Config untuk WAHA
-    const payload = {
-      name: sessionId,
-      config: {
-        proxy: null,
-        webhooks: [
-          {
-            url: webhookUrl, // <--- INI KUNCINYA (Dikirim ke n8n User)
-            events: ["message", "session.status"],
-            hmac: null,
-          },
-        ],
-      },
-    };
-
-    // 3. Create Session
-    await axios.post(`${WAHA_URL}/api/sessions`, payload, { headers: HEADERS });
+    // 4. Pastikan session berjalan (auto start saat STOPPED)
+    try {
+      await axios.post(`${WAHA_URL}/api/sessions/${sessionId}/start`, {}, { headers: HEADERS });
+    } catch (error) {
+      const recoverable = await isRecoverableStartError(sessionId, error);
+      if (!recoverable) throw error;
+    }
   } catch (error) {
     console.error("WAHA Service Error:", error?.response?.data || error.message);
     throw new AppError("Gagal menghubungkan ke Server WhatsApp Engine.", 502);
@@ -77,8 +115,17 @@ export const getWahaStatus = async (sessionId) => {
     const response = await axios.get(`${WAHA_URL}/api/sessions/${sessionId}`, {
       headers: HEADERS,
     });
+    const status = response.data.status;
+
+    if (status === "STOPPED" || status === "FAILED") {
+      try {
+        await axios.post(`${WAHA_URL}/api/sessions/${sessionId}/start`, {}, { headers: HEADERS });
+      } catch (error) {
+        // Abaikan error start otomatis, biar status tetap terlapor
+      }
+    }
     // Mapping status WAHA ke status aplikasi kita
-    return response.data.status;
+    return status;
   } catch (error) {
     return "STOPPED";
   }

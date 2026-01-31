@@ -1,4 +1,5 @@
-import { FaExclamationTriangle, FaInfoCircle, FaTrashAlt } from "react-icons/fa";
+import { FaExclamationTriangle, FaInfoCircle } from "react-icons/fa";
+import { IoIosAlert } from "react-icons/io";
 
 const ConfirmationModal = ({
   isOpen,
@@ -16,7 +17,7 @@ const ConfirmationModal = ({
   // Konfigurasi Visual (Hanya Icon & Warna Background)
   const configs = {
     danger: {
-      icon: <FaTrashAlt />, // Atau icon lain jika perlu, tapi Trash default untuk danger
+      icon: <IoIosAlert />, // Atau icon lain jika perlu, tapi Trash default untuk danger
       iconBg: "bg-red-100 text-red-600",
       btnColor: "bg-red-600 hover:bg-red-700",
       focusRing: "focus:ring-red-500",
@@ -39,7 +40,7 @@ const ConfirmationModal = ({
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity animate-[fadeIn_0.2s_ease-out]">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all scale-100 animate-[scaleIn_0.2s_ease-out]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 transform transition-all scale-100 animate-[scaleIn_0.2s_ease-out]">
         <div className="flex flex-col items-center text-center">
           {/* Icon Header */}
           <div

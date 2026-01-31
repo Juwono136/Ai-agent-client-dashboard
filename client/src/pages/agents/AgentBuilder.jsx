@@ -19,6 +19,12 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
+import {
+  getDefaultHandoffConfig,
+  parseHandoffConfig,
+  serializeHandoffConfig,
+  validateHandoffConfig,
+} from "../../utils/handoff";
 
 // Tabs
 import GeneralTab from "./tabs/GeneralTab";
@@ -60,6 +66,7 @@ const AgentBuilder = () => {
     unit: "minutes",
     prompt: "",
   });
+  const [handoffConfig, setHandoffConfig] = useState(getDefaultHandoffConfig());
 
   // 1. INIT
   useEffect(() => {
@@ -78,6 +85,7 @@ const AgentBuilder = () => {
       });
       setPreviewImage(null);
       setPendingKnowledge([]);
+      setHandoffConfig(getDefaultHandoffConfig());
     }
     return () => dispatch(resetAgentState());
   }, [id, isEditMode, dispatch]);
@@ -98,8 +106,10 @@ const AgentBuilder = () => {
       if (currentAgent.followupConfig) {
         setFollowupConfig(currentAgent.followupConfig);
       }
+      setHandoffConfig(parseHandoffConfig(currentAgent.transferCondition));
     } else {
       setFollowupConfig({ isEnabled: false, delay: 15, unit: "minutes", prompt: "" });
+      setHandoffConfig(getDefaultHandoffConfig());
     }
   }, [currentAgent, isEditMode]);
 
@@ -130,6 +140,11 @@ const AgentBuilder = () => {
   // 4. SAVE LOGIC (SOPHISTICATED)
   const handleSave = async () => {
     if (!formData.name) return toast.error("Nama Agent wajib diisi.");
+    const handoffValidation = validateHandoffConfig(handoffConfig);
+    if (!handoffValidation.isValid) {
+      setActiveTab("general");
+      return toast.error(handoffValidation.message);
+    }
 
     setIsSaving(true);
     try {
@@ -138,6 +153,7 @@ const AgentBuilder = () => {
       if (welcomeImageFile) dataToSend.append("welcomeImage", welcomeImageFile);
 
       dataToSend.append("followupConfig", JSON.stringify(followupConfig));
+      dataToSend.append("transferCondition", serializeHandoffConfig(handoffConfig));
 
       let agentId = id;
       if (isEditMode) {
@@ -265,6 +281,8 @@ const AgentBuilder = () => {
                 handleChange={handleInputChange}
                 handleFileChange={handleFileChange}
                 previewImage={previewImage || currentAgent?.welcomeImageUrl}
+                handoffConfig={handoffConfig}
+                setHandoffConfig={setHandoffConfig}
               />
             </div>
 
@@ -301,10 +319,11 @@ const AgentBuilder = () => {
               <ChatPreview
                 agentName={formData.name}
                 systemInstruction={formData.systemInstruction}
+                handoffConfig={handoffConfig}
               />
               <div className="mt-4 bg-blue-50/50 rounded-xl p-4 border border-blue-100 text-xs text-blue-800 leading-relaxed">
-                <p className="font-semibold mb-1">🔗 Integrasi n8n</p>
-                <p>Konfigurasi ini akan otomatis disinkronkan dengan workflow n8n Anda.</p>
+                <p className="font-semibold mb-1">AI agent chat preview</p>
+                <p>Silahkan tes ai agent kamu di melalui chat tersebut untuk simulasi.</p>
               </div>
             </div>
           </div>

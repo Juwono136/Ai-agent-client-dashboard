@@ -12,6 +12,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [qrLoading, setQrLoading] = useState(false); // State lokal untuk loading QR
   const [statusMessage, setStatusMessage] = useState("Menunggu WhatsApp...");
+  const [activePlatformId, setActivePlatformId] = useState(null);
 
   // Refs untuk interval agar bisa di-clear dengan aman
   const statusIntervalRef = useRef(null);
@@ -25,6 +26,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
           name: initialData.name,
           agentId: initialData.agentId || "",
         });
+        setActivePlatformId(initialData.id);
         // Jika sedang scanning, langsung masuk step 2
         if (initialData.status === "SCANNING") {
           setStep(2);
@@ -35,12 +37,14 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
       } else {
         setStep(1);
         setFormData({ name: "", agentId: "" });
+        setActivePlatformId(null);
       }
     } else {
       stopAllPolling();
       dispatch(clearQR());
       setStep(1);
       setQrLoading(false);
+      setActivePlatformId(null);
     }
   }, [isOpen, initialData, dispatch]);
 
@@ -65,6 +69,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
     // Jika Create Sukses -> Pindah ke Step 2
     if (result && !initialData) {
       setStep(2);
+      setActivePlatformId(result.id);
       startScanningProcess(result.id);
     } else if (initialData && step === 1 && initialData.status !== "SCANNING") {
       onClose(); // Kalau cuma edit nama/agent, langsung tutup
@@ -118,7 +123,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
 
   // --- MANUAL REFRESH ---
   const handleRefreshQR = () => {
-    const id = initialData?.id || formData.id; // Ambil ID yang tersedia
+    const id = activePlatformId || initialData?.id; // Ambil ID yang tersedia
     if (!id) return;
 
     // Reset UI ke state loading

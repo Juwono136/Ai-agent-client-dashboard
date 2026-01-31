@@ -89,6 +89,15 @@ export const getPlatformQR = async (req, res, next) => {
 
     if (!platform) return next(new AppError("Platform tidak ditemukan", 404));
 
+    // Pastikan session sudah mulai (auto-start jika STOPPED)
+    const wahaStatus = await wahaService.getWahaStatus(platform.sessionId);
+    if (["STOPPED", "STARTING", "FAILED"].includes(wahaStatus)) {
+      return res.status(202).json({
+        success: false,
+        message: "Session sedang dinyalakan, coba 2-5 detik lagi...",
+      });
+    }
+
     const qrImage = await wahaService.getWahaScreenshot(platform.sessionId);
 
     if (!qrImage) {

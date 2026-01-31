@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 
 import PlatformModal from "../../components/platforms/PlatformModal";
 import Loader from "../../components/Loader";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 const ConnectedPlatforms = () => {
   const dispatch = useDispatch();
@@ -30,6 +31,7 @@ const ConnectedPlatforms = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, platform: null });
 
   const [loadingText, setLoadingText] = useState("Memproses...");
 
@@ -55,10 +57,21 @@ const ConnectedPlatforms = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Yakin ingin menghapus koneksi ini?")) {
-      setLoadingText("Menghapus koneksi..."); // Set teks sebelum dispatch
-      dispatch(deletePlatform(id));
+  const handleOpenDeleteConfirm = (platform) => {
+    setConfirmState({ isOpen: true, platform });
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    setConfirmState({ isOpen: false, platform: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.platform) return;
+    setLoadingText("Menghapus koneksi...");
+    const resultAction = await dispatch(deletePlatform(confirmState.platform.id));
+    if (deletePlatform.fulfilled.match(resultAction)) {
+      toast.success("Koneksi berhasil dihapus");
+      handleCloseDeleteConfirm();
     }
   };
 
@@ -66,13 +79,21 @@ const ConnectedPlatforms = () => {
   const handleModalSubmit = async (formData) => {
     setLoadingText("Menyimpan konfigurasi..."); // Set teks
     if (selectedPlatform) {
-      await dispatch(updatePlatform({ id: selectedPlatform.id, platformData: formData }));
-      toast.success("Konfigurasi berhasil diperbarui");
+      const resultAction = await dispatch(
+        updatePlatform({ id: selectedPlatform.id, platformData: formData }),
+      );
+      if (updatePlatform.fulfilled.match(resultAction)) {
+        toast.success("Konfigurasi berhasil diperbarui");
+      }
       return null;
     } else {
       const resultAction = await dispatch(createPlatform(formData));
       if (createPlatform.fulfilled.match(resultAction)) {
-        return resultAction.payload.data;
+        const created = resultAction.payload.data;
+        // Set agar modal langsung masuk mode scan QR
+        setSelectedPlatform(created);
+        toast.success("Koneksi berhasil ditambahkan");
+        return created;
       }
       return null;
     }
@@ -119,10 +140,10 @@ const ConnectedPlatforms = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
             Connected Platforms
           </h1>
-          <p className="text-gray-500 mt-1">Kelola koneksi WhatsApp Business Anda.</p>
+          <p className="text-gray-500 mt-1">Kelola koneksi WhatsApp agar terhubung dengan AI Agent.</p>
         </div>
         <button
           onClick={handleOpenCreate}
@@ -141,7 +162,7 @@ const ConnectedPlatforms = () => {
           </div>
           <h3 className="text-xl font-bold text-gray-800">Belum ada WhatsApp Terhubung</h3>
           <p className="text-gray-500 mt-2 max-w-md">
-            Hubungkan nomor WhatsApp agar Bot bisa mulai bekerja.
+            Hubungkan platform anda dengan AI Agent untuk memulai bekerja.
           </p>
           <button
             onClick={handleOpenCreate}
@@ -194,7 +215,7 @@ const ConnectedPlatforms = () => {
                     </li>
                     <li>
                       <a
-                        onClick={() => handleDelete(pf.id)}
+                        onClick={() => handleOpenDeleteConfirm(pf)}
                         className="gap-2 text-red-600 hover:bg-red-50 font-medium"
                       >
                         <FaTrash className="text-xs" /> Hapus
@@ -248,6 +269,18 @@ const ConnectedPlatforms = () => {
         onSubmit={handleModalSubmit}
         initialData={selectedPlatform}
         agents={agents}
+      />
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={handleCloseDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+        title="Hapus koneksi?"
+        message={`Koneksi ${confirmState.platform?.name || "ini"} akan dihapus permanen. Lanjutkan?`}
+        variant="danger"
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        isLoading={isLoading}
       />
     </div>
   );

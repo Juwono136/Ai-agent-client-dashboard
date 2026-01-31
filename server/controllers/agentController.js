@@ -5,6 +5,7 @@ import AppError from "../utils/AppError.js";
 import minioClient, { bucketName } from "../config/minio.js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { buildHandoffSystemPrompt } from "../utils/handoff.js";
 
 // --- HELPER: Upload to MinIO ---
 const uploadToMinio = async (file) => {
@@ -327,10 +328,15 @@ export const getIntegrationConfig = async (req, res, next) => {
       ? agent.KnowledgeSources.map((k) => `[${k.title}]:\n${k.description}`).join("\n\n---\n\n")
       : "";
 
+    const finalSystemPrompt = buildHandoffSystemPrompt(
+      agent.systemInstruction,
+      agent.transferCondition,
+    );
+
     // 3. Return JSON Config siap pakai untuk n8n
     res.json({
       agentName: agent.name,
-      systemInstruction: agent.systemInstruction,
+      systemInstruction: finalSystemPrompt,
       welcomeMessage: agent.welcomeMessage,
       knowledgeBase: knowledgeText,
       // Sertakan Followup Config juga
@@ -346,7 +352,8 @@ export const getIntegrationConfig = async (req, res, next) => {
 // @route   POST /api/agents/:id/test-chat
 export const testChatAgent = async (req, res, next) => {
   try {
-    const { message, sessionId, systemInstruction, name, knowledgeBase } = req.body;
+    const { message, sessionId, systemInstruction, name, knowledgeBase, transferCondition } =
+      req.body;
 
     if (!message) return next(new AppError("Pesan tidak boleh kosong.", 400));
     if (!systemInstruction) return next(new AppError("System Instruction harus diisi.", 400));
@@ -356,13 +363,15 @@ export const testChatAgent = async (req, res, next) => {
 
     const uniqueSession = sessionId || `preview-${Date.now()}`;
 
+    const finalSystemPrompt = buildHandoffSystemPrompt(systemInstruction, transferCondition);
+
     const payload = {
       mode: "simulation",
       sessionId: uniqueSession,
       message: message,
       agentConfig: {
         name: name || "Test Agent",
-        systemInstruction: systemInstruction,
+        systemInstruction: finalSystemPrompt,
         knowledgeBase: knowledgeBase || "",
       },
     };

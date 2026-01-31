@@ -42,7 +42,7 @@ const AgentList = () => {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">My AI Agents</h1>
-          <p className="text-gray-500 text-sm">Kelola asisten virtual cerdas Anda.</p>
+          <p className="text-gray-500 text-sm">Kelola asisten AI Agent kamu disini</p>
         </div>
         <Link
           to="/ai-agents/create"
@@ -61,7 +61,7 @@ const AgentList = () => {
             <FaRobot />
           </div>
           <h3 className="font-bold text-gray-600">Belum ada Agent</h3>
-          <p className="text-sm text-gray-400 mb-6">Mulai buat bot pertamamu sekarang.</p>
+          <p className="text-sm text-gray-400 mb-6">Mulai buat AI Agent pertamamu sekarang.</p>
           <Link to="/ai-agents/create" className="btn btn-sm btn-outline normal-case">
             Buat Sekarang
           </Link>

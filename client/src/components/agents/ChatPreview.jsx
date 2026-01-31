@@ -3,7 +3,7 @@ import { FaPaperPlane, FaRobot, FaEraser } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import agentService from "../../features/agents/agentService";
 
-const ChatPreview = ({ agentName, systemInstruction }) => {
+const ChatPreview = ({ agentName, systemInstruction, handoffConfig }) => {
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -65,6 +65,7 @@ const ChatPreview = ({ agentName, systemInstruction }) => {
         sessionId: sessionId,
         systemInstruction: systemInstruction,
         name: agentName,
+        transferCondition: handoffConfig,
       };
 
       const response = await agentService.testChat(payload);
