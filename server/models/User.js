@@ -29,6 +29,10 @@ const User = sequelize.define(
       type: DataTypes.ENUM("admin", "customer"),
       defaultValue: "customer",
     },
+    n8nWebhookUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -61,7 +65,7 @@ const User = sequelize.define(
         }
       },
     },
-  }
+  },
 );
 
 User.prototype.matchPassword = async function (enteredPassword) {

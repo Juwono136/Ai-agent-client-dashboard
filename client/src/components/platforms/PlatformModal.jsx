@@ -1,0 +1,275 @@
+import { useState, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getPlatformQR, getPlatformStatus, clearQR } from "../../features/platforms/platformSlice";
+import { FaTimes, FaRobot, FaCheckCircle, FaSync } from "react-icons/fa";
+
+const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
+  const dispatch = useDispatch();
+  const { currentQrCode, connectionStatus } = useSelector((state) => state.platforms);
+
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({ name: "", agentId: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false); // State lokal untuk loading QR
+  const [statusMessage, setStatusMessage] = useState("Menunggu WhatsApp...");
+
+  // Refs untuk interval agar bisa di-clear dengan aman
+  const statusIntervalRef = useRef(null);
+  const qrIntervalRef = useRef(null);
+
+  // --- RESET STATE SAAT MODAL DIBUKA/TUTUP ---
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setFormData({
+          name: initialData.name,
+          agentId: initialData.agentId || "",
+        });
+        // Jika sedang scanning, langsung masuk step 2
+        if (initialData.status === "SCANNING") {
+          setStep(2);
+          startScanningProcess(initialData.id);
+        } else {
+          setStep(1);
+        }
+      } else {
+        setStep(1);
+        setFormData({ name: "", agentId: "" });
+      }
+    } else {
+      stopAllPolling();
+      dispatch(clearQR());
+      setStep(1);
+      setQrLoading(false);
+    }
+  }, [isOpen, initialData, dispatch]);
+
+  const stopAllPolling = () => {
+    if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+    if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+  };
+
+  // --- LOGIC SUBMIT FORM (Step 1) ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Submit ke parent (Create/Update)
+    const result = await onSubmit({
+      name: formData.name,
+      agentId: formData.agentId || null,
+    });
+
+    setIsSubmitting(false);
+
+    // Jika Create Sukses -> Pindah ke Step 2
+    if (result && !initialData) {
+      setStep(2);
+      startScanningProcess(result.id);
+    } else if (initialData && step === 1 && initialData.status !== "SCANNING") {
+      onClose(); // Kalau cuma edit nama/agent, langsung tutup
+    }
+  };
+
+  // --- LOGIC STEP 2 (SCANNING) ---
+  const startScanningProcess = (platformId) => {
+    setStatusMessage("Menyiapkan Browser WhatsApp...");
+    setQrLoading(true); // Set loading awal
+
+    // 1. Polling Status Koneksi (WORKING / SCANNING)
+    statusIntervalRef.current = setInterval(() => {
+      dispatch(getPlatformStatus(platformId)).then((res) => {
+        const status = res.payload?.status;
+        if (status === "WORKING") {
+          stopAllPolling();
+          // Delay sedikit biar user lihat status connected
+          setTimeout(() => onClose(), 2000);
+        }
+      });
+    }, 3000);
+
+    // 2. Polling QR Code (Auto-Retry sampai dapat gambar valid)
+    fetchQRLoop(platformId);
+  };
+
+  const fetchQRLoop = (platformId) => {
+    // Fungsi untuk memanggil QR
+    const fetchIt = () => {
+      dispatch(getPlatformQR(platformId)).then((action) => {
+        // Cek apakah kita dapat gambar valid di payload
+        if (action.payload?.qr) {
+          setQrLoading(false);
+          setStatusMessage("Scan QR Code ini");
+          // Jika sudah dapat QR, kita bisa stop polling QR (hemat resource),
+          // ATAU biarkan polling lambat jika QR berubah (dynamic).
+          // Disini kita biarkan interval tapi perlambat, atau stop jika mau refresh manual.
+          // Untuk WAHA, QR statis biasanya cukup refresh manual jika expire.
+          if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+        }
+      });
+    };
+
+    // Panggil pertama kali langsung
+    fetchIt();
+
+    // Loop setiap 3 detik jika belum dapat QR
+    qrIntervalRef.current = setInterval(fetchIt, 3000);
+  };
+
+  // --- MANUAL REFRESH ---
+  const handleRefreshQR = () => {
+    const id = initialData?.id || formData.id; // Ambil ID yang tersedia
+    if (!id) return;
+
+    // Reset UI ke state loading
+    dispatch(clearQR());
+    setQrLoading(true);
+    setStatusMessage("Mereload QR Code...");
+
+    // Restart Polling QR
+    if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+    fetchQRLoop(id);
+  };
+
+  // Cleanup saat unmount
+  useEffect(() => {
+    return () => stopAllPolling();
+  }, []);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all">
+      {/* Ubah ukuran modal berdasarkan Step.
+         Step 1 (Form): Ukuran sedang.
+         Step 2 (QR): Ukuran besar/Full agar QR jelas.
+      */}
+      <div
+        className={`bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${step === 2 ? "w-full max-w-4xl h-[90vh]" : "w-full max-w-lg"}`}
+      >
+        {/* HEADER */}
+        <div className="bg-white px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-lg text-gray-800">
+              {step === 1 ? (initialData ? "Edit Connection" : "Setup WhatsApp") : "Scan QR Code"}
+            </h3>
+          </div>
+          <button onClick={onClose} className="btn btn-circle btn-sm btn-ghost text-gray-500">
+            <FaTimes size={18} />
+          </button>
+        </div>
+
+        {/* BODY */}
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 relative">
+          {/* --- STEP 1: FORM INPUT --- */}
+          {step === 1 && (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="form-control">
+                <label className="label font-semibold text-gray-700">Nama Label</label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full rounded-xl focus:outline-none focus:border-[#1C4D8D]"
+                  placeholder="Contoh: CS Sales 01"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label font-semibold text-gray-700">Hubungkan ke AI Agent</label>
+                <div className="relative">
+                  <select
+                    className="select select-bordered w-full rounded-xl pl-10 focus:outline-none focus:border-[#1C4D8D]"
+                    value={formData.agentId}
+                    onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
+                    required
+                  >
+                    <option value="" disabled>
+                      -- Pilih Agent --
+                    </option>
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                  <FaRobot className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="modal-action mt-8">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn btn-ghost text-gray-500 rounded-xl"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none rounded-xl px-8"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <span className="loading loading-dots"></span> : "Lanjut"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* --- STEP 2: QR CODE FULL PREVIEW --- */}
+          {step === 2 && (
+            <div className="h-full flex flex-col items-center justify-center">
+              {connectionStatus === "WORKING" ? (
+                <div className="text-center animate-fade-in-up">
+                  <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaCheckCircle className="text-6xl" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-800">Connected!</h2>
+                  <p className="text-gray-500 mt-2">WhatsApp berhasil terhubung.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full space-y-6">
+                  {/* QR CONTAINER - Dibuat besar dan responsif */}
+
+                  <div className="relative bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center justify-center min-h-75 min-w-75">
+                    {!qrLoading && currentQrCode ? (
+                      <img
+                        src={currentQrCode}
+                        alt="Scan QR"
+                        className="w-full h-full object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    ) : (
+                      // LOADING STATE (Spinner Besar)
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <span className="loading loading-spinner loading-lg text-[#1C4D8D] scale-150"></span>
+                        <p className="text-sm text-gray-400 mt-2">Mohon tunggu...</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Button Refresh */}
+                  <button
+                    onClick={handleRefreshQR}
+                    disabled={qrLoading} // Disable kalau lagi loading biar ga spam
+                    className="btn btn-outline border-gray-300 hover:bg-gray-100 text-gray-700 gap-2 rounded-xl px-6"
+                  >
+                    <FaSync className={qrLoading ? "animate-spin" : ""} />
+                    {qrLoading ? "Memuat..." : "Refresh QR Code"}
+                  </button>
+
+                  <p className="text-sm text-gray-400">
+                    Buka WhatsApp di HP {">"} Menu {">"} Linked Devices {">"} Link a Device
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PlatformModal;

@@ -11,13 +11,16 @@ import MainLayout from "./components/layout/MainLayout";
 // --- LAZY LOAD PAGES ---
 // Teknik ini membuat halaman hanya didownload saat dibutuhkan
 // Efeknya: Aplikasi lebih ringan di awal, dan kita bisa menampilkan Loader saat pindah halaman
+// const ConstructionPage = lazy(() => import("./pages/ConstructionPage"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const ConstructionPage = lazy(() => import("./pages/ConstructionPage"));
 const UserList = lazy(() => import("./pages/UserList"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
+const AgentList = lazy(() => import("./pages/agents/AgentList"));
+const AgentBuilder = lazy(() => import("./pages/agents/AgentBuilder"));
+const ConnectedPlatforms = lazy(() => import("./pages/platforms/ConnectedPlatforms"));
 
 function App() {
   return (
@@ -42,11 +45,11 @@ function App() {
                 {/* Route User Management */}
                 <Route path="/users" element={<UserList />} />
 
-                <Route path="/ai-agents" element={<ConstructionPage title="AI Agent Builder" />} />
-                <Route
-                  path="/platforms"
-                  element={<ConstructionPage title="Connected Platforms" />}
-                />
+                <Route path="/ai-agents" element={<AgentList />} />
+                <Route path="/ai-agents/create" element={<AgentBuilder />} />
+                <Route path="/ai-agents/:id" element={<AgentBuilder />} />
+
+                <Route path="/platforms" element={<ConnectedPlatforms />} />
               </Route>
             </Route>
 
