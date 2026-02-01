@@ -9,6 +9,7 @@ import {
 import { FaPlus, FaTrash, FaEdit, FaBook, FaSave, FaTimes, FaLink } from "react-icons/fa";
 import toast from "react-hot-toast";
 import RichTextEditor from "../../../components/common/RichTextEditor";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const KnowledgeTab = ({
   agentId,
@@ -28,6 +29,10 @@ const KnowledgeTab = ({
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    item: null,
+  });
 
   const resetForm = () => {
     setFormState({ id: null, title: "", content: "", tempId: null });
@@ -106,6 +111,27 @@ const KnowledgeTab = ({
       content: item.description || "",
     });
     window.scrollTo({ top: 150, behavior: "smooth" });
+  };
+
+  const openDeleteConfirm = (item) => {
+    setConfirmState({ isOpen: true, item });
+  };
+
+  const closeDeleteConfirm = () => {
+    setConfirmState({ isOpen: false, item: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.item) return;
+    try {
+      await dispatch(deleteKnowledge(confirmState.item.id)).unwrap();
+      toast.success("Resource berhasil dihapus.", { id: "knowledge-delete" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal menghapus resource.", { id: "knowledge-delete" });
+    } finally {
+      closeDeleteConfirm();
+    }
   };
 
   return (
@@ -190,7 +216,7 @@ const KnowledgeTab = ({
           <span className="badge badge-neutral badge-sm">
             {knowledgeSources?.length + pendingKnowledge?.length || 0}
           </span>
-          Daftar Knowledge Base
+          Daftar Knowledge Resources
         </h4>
 
         <div className="grid grid-cols-1 gap-4">
@@ -251,10 +277,7 @@ const KnowledgeTab = ({
                 </button>
                 <span className="text-gray-300">|</span>
                 <button
-                  onClick={() => {
-                    if (window.confirm(`Hapus "${item.title}"?`))
-                      dispatch(deleteKnowledge(item.id));
-                  }}
+                  onClick={() => openDeleteConfirm(item)}
                   className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-red-500 hover:underline"
                 >
                   <FaTrash /> Hapus Permanen
@@ -270,6 +293,21 @@ const KnowledgeTab = ({
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={closeDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Knowledge?"
+        message={
+          confirmState.item?.title
+            ? `Kamu yakin ingin menghapus "${confirmState.item.title}"?`
+            : "Kamu yakin ingin menghapus resource ini?"
+        }
+        variant="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+      />
     </div>
   );
 };

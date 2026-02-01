@@ -265,7 +265,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
                   </button>
 
                   <p className="text-sm text-gray-400">
-                    Buka WhatsApp di HP {">"} Menu {">"} Linked Devices {">"} Link a Device
+                    Buka WhatsApp di HP {">"} Pengaturan {">"} Klik Ikon QR Code pada Profile {">"} Scan QR Code diatas
                   </p>
                 </div>
               )}

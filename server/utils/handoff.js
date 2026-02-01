@@ -59,4 +59,30 @@ const buildHandoffSystemPrompt = (basePrompt, rawConfig) => {
   return `${basePrompt}\n\n${rules.join("\n")}`;
 };
 
-export { normalizeHandoffConfig, buildHandoffSystemPrompt };
+const appendWelcomeRules = (basePrompt, welcomeMessage, welcomeImageUrl) => {
+  if (!welcomeMessage && !welcomeImageUrl) return basePrompt;
+
+  const rules = [];
+  rules.push("WELCOME RULES:");
+  rules.push(
+    "- Jika ini adalah balasan asisten pertama pada sesi ini, kirimkan welcome message di awal.",
+  );
+  if (welcomeMessage) {
+    rules.push(`- Welcome message: "${welcomeMessage}"`);
+  }
+  if (welcomeImageUrl) {
+    rules.push(
+      `- Jika perlu menampilkan gambar sapaan, tulis URL ini di baris terpisah dengan format "WELCOME_IMAGE_URL: ${welcomeImageUrl}"`,
+    );
+  }
+
+  return `${basePrompt}\n\n${rules.join("\n")}`;
+};
+
+const buildAgentSystemPrompt = (basePrompt, handoffConfig, welcomeMessage, welcomeImageUrl) => {
+  const base = basePrompt || "Kamu adalah asisten virtual yang membantu.";
+  const withWelcome = appendWelcomeRules(base, welcomeMessage, welcomeImageUrl);
+  return buildHandoffSystemPrompt(withWelcome, handoffConfig);
+};
+
+export { normalizeHandoffConfig, buildHandoffSystemPrompt, buildAgentSystemPrompt };

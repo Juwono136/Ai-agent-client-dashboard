@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -67,6 +67,30 @@ const AgentBuilder = () => {
     prompt: "",
   });
   const [handoffConfig, setHandoffConfig] = useState(getDefaultHandoffConfig());
+
+  const knowledgeBaseText = useMemo(() => {
+    const sources = [];
+    if (Array.isArray(currentAgent?.KnowledgeSources)) {
+      sources.push(
+        ...currentAgent.KnowledgeSources.map((k) => ({
+          title: k.title || "Untitled",
+          description: k.description || "",
+        })),
+      );
+    }
+    if (Array.isArray(pendingKnowledge)) {
+      sources.push(
+        ...pendingKnowledge.map((k) => ({
+          title: k.title || "Untitled",
+          description: k.description || "",
+        })),
+      );
+    }
+    return sources
+      .filter((k) => k.description && k.description.trim().length > 0)
+      .map((k) => `[${k.title}]:\n${k.description}`)
+      .join("\n\n---\n\n");
+  }, [currentAgent, pendingKnowledge]);
 
   // 1. INIT
   useEffect(() => {
@@ -149,7 +173,10 @@ const AgentBuilder = () => {
     setIsSaving(true);
     try {
       const dataToSend = new FormData();
-      Object.keys(formData).forEach((key) => dataToSend.append(key, formData[key]));
+      Object.keys(formData).forEach((key) => {
+        if (key === "transferCondition") return;
+        dataToSend.append(key, formData[key]);
+      });
       if (welcomeImageFile) dataToSend.append("welcomeImage", welcomeImageFile);
 
       dataToSend.append("followupConfig", JSON.stringify(followupConfig));
@@ -254,7 +281,7 @@ const AgentBuilder = () => {
           <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 scrollbar-hide">
             {[
               { id: "general", label: "General", icon: <FaBrain /> },
-              { id: "knowledge", label: "Knowledge Base", icon: <FaDatabase /> },
+              { id: "knowledge", label: "Knowledge Resources", icon: <FaDatabase /> },
               { id: "followups", label: "Follow-ups", icon: <FaClock /> },
               { id: "evaluation", label: "Evaluation", icon: <FaChartBar /> },
             ].map((tab) => (
@@ -319,11 +346,15 @@ const AgentBuilder = () => {
               <ChatPreview
                 agentName={formData.name}
                 systemInstruction={formData.systemInstruction}
+                knowledgeBase={knowledgeBaseText}
                 handoffConfig={handoffConfig}
+                welcomeMessage={formData.welcomeMessage}
+                welcomeImageUrl={previewImage || currentAgent?.welcomeImageUrl || ""}
+                isActive={formData.isActive}
               />
               <div className="mt-4 bg-blue-50/50 rounded-xl p-4 border border-blue-100 text-xs text-blue-800 leading-relaxed">
                 <p className="font-semibold mb-1">AI agent chat preview</p>
-                <p>Silahkan tes ai agent kamu di melalui chat tersebut untuk simulasi.</p>
+                <p>Silahkan tes ai agent kamu melalui chat tersebut untuk simulasi.</p>
               </div>
             </div>
           </div>

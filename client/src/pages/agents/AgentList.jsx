@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { FaPlus, FaRobot } from "react-icons/fa";
@@ -8,10 +8,15 @@ import toast from "react-hot-toast";
 // IMPORT COMPONENT BARU
 import AgentCard from "../../components/agents/AgentCard";
 import Loader from "../../components/Loader"; // Pastikan loader ada
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 const AgentList = () => {
   const dispatch = useDispatch();
   const { agents, isLoading, isError, message, isSuccess } = useSelector((state) => state.agents);
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    agentId: null,
+  });
 
   useEffect(() => {
     dispatch(getAgents());
@@ -19,20 +24,29 @@ const AgentList = () => {
 
   useEffect(() => {
     if (isError) {
-      toast.error(message);
+      toast.error(message, { id: "agent-list-status" });
       dispatch(resetAgentState());
     }
     if (isSuccess && message) {
-      toast.success(message);
+      toast.success(message, { id: "agent-list-status" });
       dispatch(resetAgentState());
     }
   }, [isError, isSuccess, message, dispatch]);
 
   const handleDelete = (id) => {
-    if (
-      window.confirm("Yakin ingin menghapus agent ini? Data yang dihapus tidak dapat dikembalikan.")
-    ) {
-      dispatch(deleteAgent(id));
+    setConfirmState({ isOpen: true, agentId: id });
+  };
+
+  const closeDeleteConfirm = () => {
+    setConfirmState({ isOpen: false, agentId: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.agentId) return;
+    try {
+      await dispatch(deleteAgent(confirmState.agentId)).unwrap();
+    } finally {
+      closeDeleteConfirm();
     }
   };
 
@@ -74,6 +88,17 @@ const AgentList = () => {
           ))}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={confirmState.isOpen}
+        onClose={closeDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Agent?"
+        message="Yakin ingin menghapus agent ini? Data yang dihapus tidak dapat dikembalikan."
+        variant="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+      />
     </div>
   );
 };

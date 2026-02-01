@@ -3,11 +3,20 @@ import { FaPaperPlane, FaRobot, FaEraser } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import agentService from "../../features/agents/agentService";
 
-const ChatPreview = ({ agentName, systemInstruction, handoffConfig }) => {
+const ChatPreview = ({
+  agentName,
+  systemInstruction,
+  knowledgeBase,
+  handoffConfig,
+  welcomeMessage,
+  welcomeImageUrl,
+  isActive,
+}) => {
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState(`sess-${Date.now()}`);
+  const [hasWelcomed, setHasWelcomed] = useState(false);
 
   const scrollRef = useRef(null);
 
@@ -41,12 +50,18 @@ const ChatPreview = ({ agentName, systemInstruction, handoffConfig }) => {
       },
     ]);
     setSessionId(`sess-${Date.now()}`);
+    setHasWelcomed(false);
   };
 
   // 4. Handle Send
   const handleSend = async (e) => {
     e.preventDefault();
     if (!inputMsg.trim()) return;
+
+    if (!isActive) {
+      toast.error("Agent belum aktif. Aktifkan dulu untuk mencoba.");
+      return;
+    }
 
     if (!systemInstruction || systemInstruction.trim().length < 5) {
       toast.error("Mohon isi 'Instruksi / Prompt' terlebih dahulu.");
@@ -65,19 +80,33 @@ const ChatPreview = ({ agentName, systemInstruction, handoffConfig }) => {
         sessionId: sessionId,
         systemInstruction: systemInstruction,
         name: agentName,
+        knowledgeBase: knowledgeBase || "",
         transferCondition: handoffConfig,
+        welcomeMessage: welcomeMessage || "",
+        welcomeImageUrl: welcomeImageUrl || "",
       };
 
       const response = await agentService.testChat(payload);
+
+      const rawOutput = response.output || "";
+      const imgMatch = rawOutput.match(/WELCOME_IMAGE_URL:\s*(\S+)/i);
+      const imageUrl = imgMatch?.[1]?.trim() || null;
+      const cleanedText = rawOutput.replace(/WELCOME_IMAGE_URL:\s*\S+/i, "").trim();
+      const resolvedImageUrl =
+        imageUrl || (!hasWelcomed && welcomeImageUrl ? welcomeImageUrl : null);
 
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: "system",
-          text: response.output,
+          text: cleanedText || "",
+          image: resolvedImageUrl || undefined,
         },
       ]);
+      if (!hasWelcomed && (cleanedText || resolvedImageUrl)) {
+        setHasWelcomed(true);
+      }
     } catch (error) {
       console.error(error);
       setMessages((prev) => [

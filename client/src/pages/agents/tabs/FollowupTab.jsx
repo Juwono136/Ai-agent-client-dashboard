@@ -74,8 +74,8 @@ const FollowupTab = ({ config, setConfig }) => {
                   </select>
                 </div>
                 <label className="label">
-                  <span className="label-text-alt text-gray-400">
-                    Dihitung setelah respon terakhir AI.
+                  <span className="text-xs text-gray-400 italic">
+                    *) Dihitung setelah respon terakhir AI Agent.
                   </span>
                 </label>
               </div>
@@ -85,7 +85,7 @@ const FollowupTab = ({ config, setConfig }) => {
                   <FaLightbulb className="mt-1 text-blue-600 shrink-0" />
                   <p>
                     <strong>Tips:</strong> Jangan atur waktu terlalu cepat agar tidak dianggap spam.
-                    Idealnya 15-30 menit untuk pesan "keranjang tertinggal".
+                    Idealnya 15-30 menit untuk pesan follow-up.
                   </p>
                 </div>
               </div>

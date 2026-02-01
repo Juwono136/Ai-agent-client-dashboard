@@ -46,15 +46,34 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
       // Opsi 1: Upload dari Komputer
       input.onchange = () => {
         const file = input.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            // Masukkan gambar sebagai Base64 (Preview langsung muncul)
-            const range = quill.getSelection();
-            quill.insertEmbed(range.index, "image", e.target.result);
+        if (!file) return;
+
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        const QUALITY = 0.85;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height, 1);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL("image/jpeg", QUALITY);
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, "image", compressedDataUrl);
           };
-          reader.readAsDataURL(file);
-        }
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       };
 
       // Note: Jika ingin opsi "Input URL", biasanya kita pakai Modal custom.
@@ -93,14 +112,22 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
       <style>{`
         .ql-editor img {
             max-width: 100%;
+            max-height: 360px;
             height: auto;
             border-radius: 8px;
             margin: 10px 0;
             border: 1px solid #eee;
+            object-fit: contain;
+            display: block;
         }
         .ql-container {
             font-family: inherit;
             font-size: 14px;
+        }
+        @media (max-width: 640px) {
+          .ql-editor img {
+            max-height: 240px;
+          }
         }
       `}</style>
       <div ref={editorRef} style={{ minHeight: "250px", border: "none" }} />

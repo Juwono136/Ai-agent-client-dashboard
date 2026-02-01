@@ -5,7 +5,7 @@ import AppError from "../utils/AppError.js";
 import minioClient, { bucketName } from "../config/minio.js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { buildHandoffSystemPrompt } from "../utils/handoff.js";
+import { buildAgentSystemPrompt } from "../utils/handoff.js";
 
 // --- HELPER: Upload to MinIO ---
 const uploadToMinio = async (file) => {
@@ -28,7 +28,7 @@ export const getAgentByWa = async (req, res) => {
     // Cari agent berdasarkan nomor WA yg terdaftar
     const agent = await Agent.findOne({
       where: { whatsappNumber: waNumber, isActive: true },
-      include: ["KnowledgeSources"], // Pastikan relasi diload
+      include: [KnowledgeSource], // Pastikan relasi diload
     });
 
     if (!agent) {
@@ -36,7 +36,8 @@ export const getAgentByWa = async (req, res) => {
     }
 
     // Gabungkan semua deskripsi knowledge jadi satu teks konteks
-    const knowledgeText = agent.KnowledgeSources.map((k) => k.description) // Description sudah HTML/Text dari Rich Text
+    const knowledgeText = (agent.KnowledgeSources || [])
+      .map((k) => k.description) // Description sudah HTML/Text dari Rich Text
       .join("\n\n---\n\n");
 
     res.json({
@@ -45,7 +46,7 @@ export const getAgentByWa = async (req, res) => {
       welcomeMessage: agent.welcomeMessage,
       knowledgeContext: knowledgeText,
       // Kirim juga URL gambar knowledge jika perlu diproses vision model n8n
-      knowledgeImages: agent.KnowledgeSources.map((k) => k.imageUrl),
+      knowledgeImages: (agent.KnowledgeSources || []).map((k) => k.imageUrl),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -64,7 +65,7 @@ export const createAgent = async (req, res, next) => {
     }
 
     // 2. Ambil data dari body
-    const {
+    let {
       name,
       description,
       systemInstruction,
@@ -74,6 +75,13 @@ export const createAgent = async (req, res, next) => {
       isActive,
       followupConfig,
     } = req.body;
+
+    if (Array.isArray(transferCondition)) {
+      transferCondition = transferCondition[transferCondition.length - 1];
+    }
+    if (transferCondition && typeof transferCondition === "object") {
+      transferCondition = JSON.stringify(transferCondition);
+    }
 
     // 3. Helper: Parse JSON followupConfig
     // PENTING: Karena request ini pakai FormData (multipart/form-data),
@@ -161,7 +169,7 @@ export const updateAgent = async (req, res, next) => {
     }
 
     // Ambil fields dari body
-    const {
+    let {
       name,
       description,
       systemInstruction,
@@ -171,6 +179,13 @@ export const updateAgent = async (req, res, next) => {
       isActive,
       followupConfig,
     } = req.body;
+
+    if (Array.isArray(transferCondition)) {
+      transferCondition = transferCondition[transferCondition.length - 1];
+    }
+    if (transferCondition && typeof transferCondition === "object") {
+      transferCondition = JSON.stringify(transferCondition);
+    }
 
     // Helper: Parse JSON jika dikirim sebagai string (karena FormData)
     let parsedFollowup = null;
@@ -306,13 +321,12 @@ export const getIntegrationConfig = async (req, res, next) => {
     // 1. Cari Platform berdasarkan Session ID WAHA
     const platform = await ConnectedPlatform.findOne({
       where: {
-        // Kita cari di dalam kolom credentials JSONB
-        "credentials.sessionId": sessionId,
+        sessionId,
       },
       include: [
         {
           model: Agent,
-          include: ["KnowledgeSources"], // Include Knowledge
+          include: [KnowledgeSource], // Include Knowledge
         },
       ],
     });
@@ -323,14 +337,30 @@ export const getIntegrationConfig = async (req, res, next) => {
 
     const agent = platform.Agent;
 
-    // 2. Format Knowledge Base jadi satu teks
-    const knowledgeText = agent.KnowledgeSources
-      ? agent.KnowledgeSources.map((k) => `[${k.title}]:\n${k.description}`).join("\n\n---\n\n")
-      : "";
+    if (!agent.isActive) {
+      return res.json({
+        agentName: agent.name,
+        systemInstruction:
+          "AGENT_DISABLED: Jangan membalas pesan apapun. Output harus kosong.",
+        welcomeMessage: "",
+        welcomeImageUrl: null,
+        knowledgeBase: "",
+        isActive: false,
+        disabledReason: "Agent is inactive",
+        followupConfig: { isEnabled: false },
+      });
+    }
 
-    const finalSystemPrompt = buildHandoffSystemPrompt(
+    // 2. Format Knowledge Base jadi satu teks
+    const knowledgeText = (agent.KnowledgeSources || [])
+      .map((k) => `[${k.title}]:\n${k.description}`)
+      .join("\n\n---\n\n");
+
+    const finalSystemPrompt = buildAgentSystemPrompt(
       agent.systemInstruction,
       agent.transferCondition,
+      agent.welcomeMessage,
+      agent.welcomeImageUrl,
     );
 
     // 3. Return JSON Config siap pakai untuk n8n
@@ -338,7 +368,9 @@ export const getIntegrationConfig = async (req, res, next) => {
       agentName: agent.name,
       systemInstruction: finalSystemPrompt,
       welcomeMessage: agent.welcomeMessage,
+      welcomeImageUrl: agent.welcomeImageUrl,
       knowledgeBase: knowledgeText,
+      isActive: agent.isActive,
       // Sertakan Followup Config juga
       followupConfig: agent.followupConfig || { isEnabled: false },
     });
@@ -363,7 +395,12 @@ export const testChatAgent = async (req, res, next) => {
 
     const uniqueSession = sessionId || `preview-${Date.now()}`;
 
-    const finalSystemPrompt = buildHandoffSystemPrompt(systemInstruction, transferCondition);
+    const finalSystemPrompt = buildAgentSystemPrompt(
+      systemInstruction,
+      transferCondition,
+      req.body.welcomeMessage,
+      req.body.welcomeImageUrl,
+    );
 
     const payload = {
       mode: "simulation",
