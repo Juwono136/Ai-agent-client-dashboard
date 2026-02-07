@@ -3,6 +3,7 @@ import platformService from "./platformService";
 
 const initialState = {
   platforms: [],
+  pagination: null, // Pagination metadata
   currentQrCode: null, // Base64 Image
   connectionStatus: "STOPPED", // STOPPED, SCANNING, WORKING
   isLoading: false,
@@ -15,9 +16,9 @@ const initialState = {
 const getErrorMsg = (error) => error.response?.data?.message || error.message;
 
 // --- THUNKS ---
-export const getPlatforms = createAsyncThunk("platforms/getAll", async (_, thunkAPI) => {
+export const getPlatforms = createAsyncThunk("platforms/getAll", async (params = {}, thunkAPI) => {
   try {
-    return await platformService.getPlatforms();
+    return await platformService.getPlatforms(params);
   } catch (error) {
     return thunkAPI.rejectWithValue(getErrorMsg(error));
   }
@@ -92,6 +93,7 @@ const platformSlice = createSlice({
       .addCase(getPlatforms.fulfilled, (state, action) => {
         state.isLoading = false;
         state.platforms = action.payload.data;
+        state.pagination = action.payload.pagination || null;
       })
       .addCase(getPlatforms.rejected, (state, action) => {
         state.isLoading = false;

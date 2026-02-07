@@ -14,6 +14,7 @@ import {
   updateKnowledge,
   testChatAgent, // Controller Baru (n8n)
 } from "../controllers/agentController.js";
+import { getAgentAnalytics } from "../controllers/analyticsController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
 import { runValidation } from "../validators/validatorHandler.js";
@@ -103,5 +104,8 @@ router.put("/knowledge/:knowledgeId", updateKnowledge);
 // (Kita asumsikan ID knowledge juga UUID, bisa pakai validateAgentId kalau regex-nya sama,
 // atau buat validateKnowledgeId terpisah)
 router.delete("/knowledge/:knowledgeId", deleteKnowledge);
+
+// --- ANALYTICS ROUTES ---
+router.get("/:id/analytics", validateAgentId, runValidation, getAgentAnalytics);
 
 export default router;

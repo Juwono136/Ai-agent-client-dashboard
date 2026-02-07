@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaTimes, FaUser, FaEnvelope, FaUserTag } from "react-icons/fa";
+import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink } from "react-icons/fa";
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -7,16 +7,22 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
     email: "",
     role: "customer",
     isActive: true,
+    subscriptionMonths: "",
+    n8nWebhookUrl: "",
   });
 
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        // For edit mode, subscriptionMonths is used to extend subscription
+        // We don't calculate from expiry date, just leave it empty for admin to set extension
         setFormData({
           name: initialData.name,
           email: initialData.email,
           role: initialData.role,
           isActive: initialData.isActive,
+          subscriptionMonths: "", // Empty for edit - admin will set extension months
+          n8nWebhookUrl: initialData.n8nWebhookUrl || "",
         });
       } else {
         setFormData({
@@ -24,6 +30,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           email: "",
           role: "customer",
           isActive: true,
+          subscriptionMonths: "",
+          n8nWebhookUrl: "",
         });
       }
     }
@@ -145,6 +153,67 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                 </div>
               )}
             </div>
+
+            {/* Subscription Validity - Only for Customer */}
+            {formData.role === "customer" && (
+              <div className="form-control">
+                <label className="label text-xs font-bold text-gray-500 uppercase">
+                  Masa Berlaku Langganan
+                </label>
+                <div className="relative">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <FaCalendarAlt />
+                  </div>
+                  <select
+                    className="select select-bordered w-full pl-10 rounded-xl"
+                    value={formData.subscriptionMonths}
+                    onChange={(e) =>
+                      setFormData({ ...formData, subscriptionMonths: e.target.value })
+                    }
+                    required={formData.role === "customer"}
+                  >
+                    <option value="">Pilih Masa Berlaku</option>
+                    {/* TESTING OPTION: Opsi 1 hari untuk testing - HAPUS atau KOMENTARI setelah testing selesai */}
+                    <option value="0" className="text-orange-600 font-bold">
+                      1 Hari (Testing)
+                    </option>
+                    {/* END TESTING OPTION */}
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                      <option key={month} value={month}>
+                        {month} {month === 1 ? "Bulan" : "Bulan"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1">
+                  *Pilih durasi langganan (1-12 bulan)
+                </span>
+              </div>
+            )}
+
+            {/* n8n Webhook URL - Only for Customer */}
+            {formData.role === "customer" && (
+              <div className="form-control">
+                <label className="label text-xs font-bold text-gray-500 uppercase">
+                  URL Webhook n8n
+                </label>
+                <div className="relative">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <FaLink />
+                  </div>
+                  <input
+                    type="url"
+                    className="input input-bordered w-full pl-10 rounded-xl"
+                    placeholder="https://n8n.example.com/webhook/..."
+                    value={formData.n8nWebhookUrl}
+                    onChange={(e) => setFormData({ ...formData, n8nWebhookUrl: e.target.value })}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1">
+                  *URL webhook n8n untuk menghubungkan workflow dengan sistem
+                </span>
+              </div>
+            )}
           </fieldset>
 
           {/* Actions */}

@@ -1,11 +1,13 @@
 import Agent from "../models/Agent.js";
 import KnowledgeSource from "../models/KnowledgeSource.js";
 import ConnectedPlatform from "../models/ConnectedPlatform.js";
+import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import minioClient, { bucketName } from "../config/minio.js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { buildAgentSystemPrompt } from "../utils/handoff.js";
+import { Op } from "sequelize";
 
 // --- HELPER: Upload to MinIO ---
 const uploadToMinio = async (file) => {
@@ -17,6 +19,23 @@ const uploadToMinio = async (file) => {
   const minioUrl =
     process.env.MINIO_PUBLIC_URL || `http://localhost:${process.env.MINIO_PORT || 9000}`;
   return `${minioUrl}/${bucketName}/${fileName}`;
+};
+
+const deleteFromMinio = async (imageUrl) => {
+  if (!imageUrl) return;
+  try {
+    // Extract object name from URL
+    // URL format: http://localhost:9000/cekat-agents/uuid-filename.jpg
+    const urlParts = imageUrl.split(`/${bucketName}/`);
+    if (urlParts.length === 2) {
+      const objectName = urlParts[1];
+      await minioClient.removeObject(bucketName, objectName);
+      console.log(`Deleted image from MinIO: ${objectName}`);
+    }
+  } catch (error) {
+    console.error("Error deleting image from MinIO:", error);
+    // Don't throw error, just log it
+  }
 };
 
 // @desc    Get Agent Config for n8n Integration
@@ -123,15 +142,76 @@ export const createAgent = async (req, res, next) => {
   }
 };
 
-// @desc    Get All My Agents
-// @route   GET /api/agents
+// @desc    Get All My Agents (with Pagination, Search, Filter, Sort)
+// @route   GET /api/agents?page=1&limit=9&search=keyword&status=active&sortBy=name&sortOrder=asc
 export const getMyAgents = async (req, res, next) => {
   try {
-    const agents = await Agent.findAll({
-      where: { userId: req.user.id },
-      order: [["createdAt", "DESC"]],
+    // Extract query parameters
+    const {
+      page = 1,
+      limit = 9,
+      search,
+      status,
+      sortBy = "updatedAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build where clause
+    const where = { userId: req.user.id };
+
+    // Add search filter (case-insensitive)
+    if (search && search.trim()) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search.trim()}%` } },
+        { description: { [Op.iLike]: `%${search.trim()}%` } },
+      ];
+    }
+
+    // Add status filter
+    if (status === "active") {
+      where.isActive = true;
+    } else if (status === "inactive") {
+      where.isActive = false;
+    }
+
+    // Validate sortBy
+    const validSortFields = ["name", "createdAt", "updatedAt"];
+    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : "updatedAt";
+    const finalSortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    // Calculate pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
+    const offset = (pageNum - 1) * limitNum;
+
+    // Execute query with pagination
+    const { count, rows: agents } = await Agent.findAndCountAll({
+      where,
+      include: [
+        {
+          model: KnowledgeSource,
+          attributes: ["id", "title"], // Only include necessary fields
+        },
+      ],
+      order: [[finalSortBy, finalSortOrder]],
+      limit: limitNum,
+      offset: offset,
     });
-    res.status(200).json({ success: true, count: agents.length, data: agents });
+
+    const totalPages = Math.ceil(count / limitNum);
+
+    res.status(200).json({
+      success: true,
+      data: agents,
+      pagination: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: totalPages,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -161,11 +241,21 @@ export const updateAgent = async (req, res, next) => {
     const agent = await Agent.findOne({ where: { id: req.params.id, userId: req.user.id } });
     if (!agent) return next(new AppError("Agent tidak ditemukan.", 404));
 
-    // Handle Upload Welcome Image
+    // Handle Upload/Delete Welcome Image
     let newWelcomeImageUrl = agent.welcomeImageUrl;
     if (req.files && req.files["welcomeImage"]) {
       const file = req.files["welcomeImage"][0];
+      // Delete old image if exists
+      if (agent.welcomeImageUrl) {
+        await deleteFromMinio(agent.welcomeImageUrl);
+      }
       newWelcomeImageUrl = await uploadToMinio(file);
+    } else if (req.body.removeWelcomeImage === "true") {
+      // Flag to remove image
+      if (agent.welcomeImageUrl) {
+        await deleteFromMinio(agent.welcomeImageUrl);
+      }
+      newWelcomeImageUrl = null;
     }
 
     // Ambil fields dari body
@@ -326,7 +416,13 @@ export const getIntegrationConfig = async (req, res, next) => {
       include: [
         {
           model: Agent,
-          include: [KnowledgeSource], // Include Knowledge
+          include: [
+            KnowledgeSource, // Include Knowledge
+            {
+              model: User,
+              attributes: ["id", "role", "subscriptionExpiry"], // Include User untuk check subscription
+            },
+          ],
         },
       ],
     });
@@ -336,6 +432,39 @@ export const getIntegrationConfig = async (req, res, next) => {
     }
 
     const agent = platform.Agent;
+    const user = agent.User;
+
+    // Check subscription expiry for customer
+    if (user && user.role === "customer") {
+      if (!user.subscriptionExpiry) {
+        return res.json({
+          agentName: agent.name,
+          systemInstruction:
+            "SUBSCRIPTION_EXPIRED: Langganan belum diaktifkan. Jangan membalas pesan apapun. Output harus kosong.",
+          welcomeMessage: "",
+          welcomeImageUrl: null,
+          knowledgeBase: "",
+          isActive: false,
+          disabledReason: "Subscription not activated",
+          followupConfig: { isEnabled: false },
+        });
+      }
+
+      const expiryDate = new Date(user.subscriptionExpiry);
+      if (expiryDate < new Date()) {
+        return res.json({
+          agentName: agent.name,
+          systemInstruction:
+            "SUBSCRIPTION_EXPIRED: Langganan telah berakhir. Jangan membalas pesan apapun. Output harus kosong.",
+          welcomeMessage: "",
+          welcomeImageUrl: null,
+          knowledgeBase: "",
+          isActive: false,
+          disabledReason: "Subscription expired",
+          followupConfig: { isEnabled: false },
+        });
+      }
+    }
 
     if (!agent.isActive) {
       return res.json({
@@ -365,6 +494,7 @@ export const getIntegrationConfig = async (req, res, next) => {
 
     // 3. Return JSON Config siap pakai untuk n8n
     res.json({
+      agentId: agent.id, // Tambahkan agentId untuk logging
       agentName: agent.name,
       systemInstruction: finalSystemPrompt,
       welcomeMessage: agent.welcomeMessage,
@@ -373,6 +503,7 @@ export const getIntegrationConfig = async (req, res, next) => {
       isActive: agent.isActive,
       // Sertakan Followup Config juga
       followupConfig: agent.followupConfig || { isEnabled: false },
+      platformId: platform.id, // Tambahkan platformId untuk logging
     });
   } catch (error) {
     console.error("Integration Error:", error);
@@ -384,8 +515,15 @@ export const getIntegrationConfig = async (req, res, next) => {
 // @route   POST /api/agents/:id/test-chat
 export const testChatAgent = async (req, res, next) => {
   try {
-    const { message, sessionId, systemInstruction, name, knowledgeBase, transferCondition } =
-      req.body;
+    const {
+      message,
+      sessionId,
+      systemInstruction,
+      name,
+      knowledgeBase,
+      transferCondition,
+      followupConfig,
+    } = req.body;
 
     if (!message) return next(new AppError("Pesan tidak boleh kosong.", 400));
     if (!systemInstruction) return next(new AppError("System Instruction harus diisi.", 400));
@@ -410,6 +548,7 @@ export const testChatAgent = async (req, res, next) => {
         name: name || "Test Agent",
         systemInstruction: finalSystemPrompt,
         knowledgeBase: knowledgeBase || "",
+        followupConfig: followupConfig || null,
       },
     };
 

@@ -11,6 +11,7 @@ const ChatPreview = ({
   welcomeMessage,
   welcomeImageUrl,
   isActive,
+  followupConfig,
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState("");
@@ -84,6 +85,7 @@ const ChatPreview = ({
         transferCondition: handoffConfig,
         welcomeMessage: welcomeMessage || "",
         welcomeImageUrl: welcomeImageUrl || "",
+        followupConfig: followupConfig || null,
       };
 
       const response = await agentService.testChat(payload);

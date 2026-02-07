@@ -3,6 +3,7 @@ import authReducer from "../features/auth/authSlice";
 import userReducer from "../features/users/userSlice";
 import agentReducer from "../features/agents/agentSlice";
 import platformReducer from "../features/platforms/platformSlice";
+import dashboardReducer from "../features/dashboard/dashboardSlice";
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     users: userReducer,
     agents: agentReducer,
     platforms: platformReducer,
+    dashboard: dashboardReducer,
   },
 });

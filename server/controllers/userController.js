@@ -9,7 +9,7 @@ import { getWelcomeTemplate } from "../utils/emailTemplates.js";
 // @route   POST /api/users
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, subscriptionMonths, n8nWebhookUrl } = req.body;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -20,6 +20,26 @@ export const createUser = async (req, res, next) => {
     const randomHex = crypto.randomBytes(4).toString("hex");
     const tempPassword = `${randomHex}Cekat!`; // Contoh: a1b2c3d4Cekat!
 
+    // Calculate subscription expiry date (only for customer)
+    let subscriptionExpiry = null;
+    if (role === "customer" && subscriptionMonths) {
+      const months = parseInt(subscriptionMonths);
+      // TESTING: Handle opsi 1 hari untuk testing (value = 0)
+      // HAPUS atau KOMENTARI bagian ini setelah testing selesai
+      if (months === 0) {
+        // Set subscription expiry ke 1 hari dari sekarang untuk testing
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1);
+        expiryDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+        subscriptionExpiry = expiryDate;
+      } else if (months >= 1 && months <= 12) {
+        // END TESTING
+        const expiryDate = new Date();
+        expiryDate.setMonth(expiryDate.getMonth() + months);
+        subscriptionExpiry = expiryDate;
+      }
+    }
+
     const user = await User.create({
       name,
       email,
@@ -27,6 +47,8 @@ export const createUser = async (req, res, next) => {
       role: role || "customer",
       isFirstLogin: true,
       isActive: true,
+      n8nWebhookUrl: n8nWebhookUrl || null,
+      subscriptionExpiry: subscriptionExpiry,
     });
 
     // Kirim Email Welcome
@@ -46,6 +68,9 @@ export const createUser = async (req, res, next) => {
       console.error("Email Error:", error.message);
     }
 
+    // Reload user to get all fields including subscriptionExpiry
+    await user.reload();
+
     res.status(201).json({
       success: true,
       message: "User berhasil ditambahkan dan email undangan telah dikirim.",
@@ -56,6 +81,8 @@ export const createUser = async (req, res, next) => {
         role: user.role,
         isFirstLogin: user.isFirstLogin,
         isActive: user.isActive,
+        subscriptionExpiry: user.subscriptionExpiry,
+        n8nWebhookUrl: user.n8nWebhookUrl,
         createdAt: user.createdAt,
       },
     });
@@ -104,7 +131,7 @@ export const getAllUsers = async (req, res, next) => {
     const { count, rows } = await User.findAndCountAll({
       where: whereClause,
       attributes: { exclude: ["password", "resetPasswordToken", "resetPasswordExpire"] },
-      order: [[sortBy, order]],
+      order: [[sortBy === "subscriptionExpiry" ? "subscriptionExpiry" : sortBy, order]],
       limit: limit,
       offset: offset,
     });
@@ -132,16 +159,22 @@ export const getAllUsers = async (req, res, next) => {
 export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: { exclude: ["password"] },
+      attributes: { exclude: ["password", "resetPasswordToken", "resetPasswordExpire"] },
     });
 
     if (!user) {
       return next(new AppError("User tidak ditemukan.", 404));
     }
 
+    // Don't send n8nWebhookUrl to customer (security)
+    const userData = user.toJSON();
+    if (userData.role === "customer") {
+      delete userData.n8nWebhookUrl;
+    }
+
     res.status(200).json({
       success: true,
-      data: user,
+      data: userData,
     });
   } catch (error) {
     next(error);
@@ -152,7 +185,7 @@ export const getUserById = async (req, res, next) => {
 // @route   PUT /api/users/:id
 export const updateUser = async (req, res, next) => {
   try {
-    const { name, role, isActive } = req.body;
+    const { name, role, isActive, subscriptionMonths, n8nWebhookUrl } = req.body;
 
     const user = await User.findByPk(req.params.id);
     if (!user) {
@@ -168,8 +201,46 @@ export const updateUser = async (req, res, next) => {
     if (name) user.name = name;
     if (role) user.role = role;
     if (isActive !== undefined) user.isActive = isActive;
+    if (n8nWebhookUrl !== undefined) user.n8nWebhookUrl = n8nWebhookUrl || null;
+
+    // Handle subscription expiry (only for customer)
+    if (role === "customer" && subscriptionMonths !== undefined) {
+      if (subscriptionMonths && subscriptionMonths !== "") {
+        const months = parseInt(subscriptionMonths);
+        // TESTING: Handle opsi 1 hari untuk testing (value = 0)
+        // HAPUS atau KOMENTARI bagian ini setelah testing selesai
+        if (months === 0) {
+          // Set subscription expiry ke 1 hari dari sekarang (atau dari expiry date yang ada jika masih valid)
+          const baseDate = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
+            ? new Date(user.subscriptionExpiry)
+            : new Date();
+          const expiryDate = new Date(baseDate);
+          expiryDate.setDate(expiryDate.getDate() + 1);
+          expiryDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+          user.subscriptionExpiry = expiryDate;
+        } else if (months >= 1 && months <= 12) {
+          // END TESTING
+          // If user already has subscription, extend from current expiry or from now
+          const baseDate = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
+            ? new Date(user.subscriptionExpiry)
+            : new Date();
+          const expiryDate = new Date(baseDate);
+          expiryDate.setMonth(expiryDate.getMonth() + months);
+          user.subscriptionExpiry = expiryDate;
+        }
+      } else {
+        // Clear subscription if empty
+        user.subscriptionExpiry = null;
+      }
+    } else if (role !== "customer") {
+      // Clear subscription if role is not customer
+      user.subscriptionExpiry = null;
+    }
 
     await user.save();
+
+    // Reload user to get updated data
+    await user.reload();
 
     res.status(200).json({
       success: true,
@@ -177,8 +248,11 @@ export const updateUser = async (req, res, next) => {
       data: {
         id: user.id,
         name: user.name,
+        email: user.email,
         role: user.role,
         isActive: user.isActive,
+        subscriptionExpiry: user.subscriptionExpiry,
+        n8nWebhookUrl: user.n8nWebhookUrl,
       },
     });
   } catch (error) {

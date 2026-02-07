@@ -33,6 +33,11 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    subscriptionExpiry: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: "Tanggal berakhirnya langganan (hanya untuk customer)",
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

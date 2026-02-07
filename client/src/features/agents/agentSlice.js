@@ -8,19 +8,23 @@ const initialState = {
   isError: false,
   isSuccess: false,
   message: "",
+  pagination: null, // Store pagination info from backend
 };
 
 // Helper Error
 const getErrorMsg = (error) => error.response?.data?.message || error.message;
 
 // --- THUNKS (Tetap sama seperti sebelumnya) ---
-export const getAgents = createAsyncThunk("agents/getAll", async (_, thunkAPI) => {
-  try {
-    return await agentService.getAgents();
-  } catch (error) {
-    return thunkAPI.rejectWithValue(getErrorMsg(error));
-  }
-});
+export const getAgents = createAsyncThunk(
+  "agents/getAll",
+  async (params = {}, thunkAPI) => {
+    try {
+      return await agentService.getAgents(params);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(getErrorMsg(error));
+    }
+  },
+);
 
 export const getAgentById = createAsyncThunk("agents/getOne", async (id, thunkAPI) => {
   try {
@@ -111,6 +115,7 @@ export const agentSlice = createSlice({
       .addCase(getAgents.fulfilled, (state, action) => {
         state.isLoading = false;
         state.agents = action.payload.data;
+        state.pagination = action.payload.pagination || null;
       })
       .addCase(getAgentById.fulfilled, (state, action) => {
         state.isLoading = false;

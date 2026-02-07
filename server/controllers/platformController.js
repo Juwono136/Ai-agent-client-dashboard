@@ -3,6 +3,7 @@ import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import * as wahaService from "../services/wahaService.js";
+import { Op } from "sequelize";
 
 // @desc    Init Connection (Create Session)
 // @route   POST /api/platforms
@@ -15,8 +16,20 @@ export const createPlatform = async (req, res, next) => {
       return next(new AppError("Nama Platform dan Agent wajib dipilih", 400));
     }
 
-    // 2. Cek Webhook URL User
+    // 2. Cek Webhook URL User dan Subscription (untuk customer)
     const user = await User.findByPk(req.user.id);
+    
+    // Check subscription for customer
+    if (user.role === "customer") {
+      if (!user.subscriptionExpiry) {
+        return next(new AppError("Langganan Anda belum diaktifkan. Silakan hubungi administrator.", 403));
+      }
+      const expiryDate = new Date(user.subscriptionExpiry);
+      if (expiryDate < new Date()) {
+        return next(new AppError("Langganan Anda telah berakhir. Silakan hubungi administrator untuk memperpanjang.", 403));
+      }
+    }
+
     const targetWebhookUrl = user.n8nWebhookUrl;
 
     if (!targetWebhookUrl) {
@@ -164,15 +177,70 @@ export const getPlatformStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Get All My Platforms
+// @desc    Get All My Platforms (with pagination, search, filter, sort)
 export const getMyPlatforms = async (req, res, next) => {
   try {
-    const platforms = await ConnectedPlatform.findAll({
-      where: { userId: req.user.id },
+    const {
+      page = 1,
+      limit = 9,
+      search,
+      status,
+      sortBy = "updatedAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build where clause
+    const where = { userId: req.user.id };
+
+    // Add search filter (case-insensitive)
+    if (search && search.trim()) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search.trim()}%` } },
+        { sessionId: { [Op.iLike]: `%${search.trim()}%` } },
+      ];
+    }
+
+    // Add status filter
+    if (status && status !== "all") {
+      const validStatuses = ["STOPPED", "SCANNING", "WORKING", "FAILED"];
+      if (validStatuses.includes(status.toUpperCase())) {
+        where.status = status.toUpperCase();
+      }
+    }
+
+    // Validate sortBy
+    const validSortFields = ["name", "status", "createdAt", "updatedAt"];
+    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : "updatedAt";
+    const finalSortOrder = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
+
+    // Calculate pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
+    const offset = (pageNum - 1) * limitNum;
+
+    // Execute query with pagination
+    const { count, rows: platforms } = await ConnectedPlatform.findAndCountAll({
+      where,
       include: [{ model: Agent, attributes: ["id", "name"] }],
-      order: [["createdAt", "DESC"]],
+      order: [[finalSortBy, finalSortOrder]],
+      limit: limitNum,
+      offset: offset,
     });
-    res.status(200).json({ success: true, data: platforms });
+
+    const totalPages = Math.ceil(count / limitNum);
+
+    res.status(200).json({
+      success: true,
+      data: platforms,
+      pagination: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: totalPages,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -32,6 +32,7 @@ import KnowledgeTab from "./tabs/KnowledgeTab";
 import FollowupTab from "./tabs/FollowupTab";
 import EvaluationTab from "./tabs/EvaluationTab";
 import ChatPreview from "../../components/agents/ChatPreview";
+import SubscriptionWarning from "../../components/common/SubscriptionWarning";
 
 const AgentBuilder = () => {
   const { id } = useParams();
@@ -40,9 +41,11 @@ const AgentBuilder = () => {
   const navigate = useNavigate();
 
   const { currentAgent, isLoading, isSuccess, message } = useSelector((state) => state.agents);
+  const { user } = useSelector((state) => state.auth);
 
   const [activeTab, setActiveTab] = useState("general");
   const [isSaving, setIsSaving] = useState(false); // Local loading state for custom flow
+  const [isTabLoading, setIsTabLoading] = useState(false); // Loading state for tab switching
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -56,6 +59,7 @@ const AgentBuilder = () => {
   });
   const [welcomeImageFile, setWelcomeImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [shouldRemoveImage, setShouldRemoveImage] = useState(false);
 
   // Smart Knowledge State (Untuk Create Mode)
   const [pendingKnowledge, setPendingKnowledge] = useState([]);
@@ -110,6 +114,7 @@ const AgentBuilder = () => {
       setPreviewImage(null);
       setPendingKnowledge([]);
       setHandoffConfig(getDefaultHandoffConfig());
+      setShouldRemoveImage(false);
     }
     return () => dispatch(resetAgentState());
   }, [id, isEditMode, dispatch]);
@@ -126,7 +131,12 @@ const AgentBuilder = () => {
         whatsappNumber: currentAgent.whatsappNumber || "",
         isActive: currentAgent.isActive || false,
       });
-      if (currentAgent.welcomeImageUrl) setPreviewImage(currentAgent.welcomeImageUrl);
+      // Only set preview image if not marked for removal
+      if (currentAgent.welcomeImageUrl && !shouldRemoveImage) {
+        setPreviewImage(currentAgent.welcomeImageUrl);
+      } else if (shouldRemoveImage) {
+        setPreviewImage(null);
+      }
       if (currentAgent.followupConfig) {
         setFollowupConfig(currentAgent.followupConfig);
       }
@@ -136,6 +146,13 @@ const AgentBuilder = () => {
       setHandoffConfig(getDefaultHandoffConfig());
     }
   }, [currentAgent, isEditMode]);
+  
+  // Separate effect to handle image removal
+  useEffect(() => {
+    if (shouldRemoveImage) {
+      setPreviewImage(null);
+    }
+  }, [shouldRemoveImage]);
 
   // 3. HANDLERS
   const handleInputChange = (e) => {
@@ -151,6 +168,18 @@ const AgentBuilder = () => {
     }
   };
 
+  const handleRemoveImage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // console.log("Removing image...");
+    setWelcomeImageFile(null);
+    setPreviewImage(null);
+    setShouldRemoveImage(true);
+    toast.success("Gambar berhasil dihapus", { duration: 2000 });
+  };
+
   // Logic untuk Knowledge di Create Mode
   const handleAddPendingKnowledge = (knowledgeItem) => {
     // knowledgeItem = { description, file, tempId }
@@ -162,7 +191,21 @@ const AgentBuilder = () => {
   };
 
   // 4. SAVE LOGIC (SOPHISTICATED)
+  // Check subscription status
+  const isSubscriptionExpired = (() => {
+    if (user?.role !== "customer") return false;
+    if (!user?.subscriptionExpiry) return true; // No subscription = expired
+    const expiryDate = new Date(user.subscriptionExpiry);
+    return expiryDate < new Date();
+  })();
+
   const handleSave = async () => {
+    if (isSubscriptionExpired) {
+      toast.error("Langganan Anda telah berakhir. Silakan hubungi administrator.", {
+        id: "subscription-expired-save",
+      });
+      return;
+    }
     if (!formData.name) return toast.error("Nama Agent wajib diisi.");
     const handoffValidation = validateHandoffConfig(handoffConfig);
     if (!handoffValidation.isValid) {
@@ -177,7 +220,13 @@ const AgentBuilder = () => {
         if (key === "transferCondition") return;
         dataToSend.append(key, formData[key]);
       });
-      if (welcomeImageFile) dataToSend.append("welcomeImage", welcomeImageFile);
+      if (welcomeImageFile) {
+        dataToSend.append("welcomeImage", welcomeImageFile);
+      }
+      // Send flag to remove image if needed
+      if (shouldRemoveImage && isEditMode) {
+        dataToSend.append("removeWelcomeImage", "true");
+      }
 
       dataToSend.append("followupConfig", JSON.stringify(followupConfig));
       dataToSend.append("transferCondition", serializeHandoffConfig(handoffConfig));
@@ -211,6 +260,11 @@ const AgentBuilder = () => {
         isEditMode ? "Agent berhasil diperbarui!" : "Agent berhasil dibuat & Knowledge diupload!",
       );
 
+      // Reset remove image flag after successful save
+      if (shouldRemoveImage) {
+        setShouldRemoveImage(false);
+      }
+
       // Redirect ke edit mode jika create baru, agar data tersinkron
       if (!isEditMode) navigate(`/ai-agents/${agentId}`);
     } catch (err) {
@@ -221,63 +275,85 @@ const AgentBuilder = () => {
     }
   };
 
+  const handleTabChange = (tabId) => {
+    setIsTabLoading(true);
+    setActiveTab(tabId);
+    // Simulate loading delay for smooth transition
+    setTimeout(() => {
+      setIsTabLoading(false);
+    }, 300);
+  };
+
   return (
-    <div className="pb-20 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* HEADER STICKY (Mobile Friendly) */}
-      <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm py-4 border-b border-gray-200 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+    <div className="pb-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* HEADER STICKY (Mobile Friendly) - Compact design */}
+      <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 -mx-4 px-4 sm:mx-0 sm:px-0 mb-4">
+        {/* Compact Header Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 py-2 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => navigate("/ai-agents")}
-              className="btn btn-circle btn-ghost btn-sm text-gray-500 hover:bg-gray-200"
+              className="btn btn-circle btn-ghost btn-sm text-gray-500 hover:bg-gray-200 flex-shrink-0"
             >
               <FaArrowLeft />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800 leading-tight">
-                {isEditMode ? formData.name : "New AI Agent"}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-bold text-gray-800 leading-tight truncate">
+                {isEditMode ? formData.name || "Loading..." : "New AI Agent"}
               </h1>
-              <div className="text-xs text-gray-500 flex items-center gap-2">
-                {isEditMode ? <span className="text-blue-600">Editing Mode</span> : "Creation Mode"}
+              <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+                {isEditMode ? (
+                  <span className="text-blue-600 font-medium">Editing Mode</span>
+                ) : (
+                  <span>Creation Mode</span>
+                )}
                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                <span>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</span>
+                <span className="capitalize">{activeTab.replace("-", " ")}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-1.5 bg-white px-2 sm:px-2.5 py-1 rounded-full border border-gray-200 shadow-sm">
               <span
-                className={`w-2 h-2 rounded-full ${formData.isActive ? "bg-green-500" : "bg-gray-300"}`}
+                className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? "bg-green-500" : "bg-gray-300"}`}
               ></span>
-              <span className="text-xs font-medium text-gray-600">Active</span>
+              <span className="text-xs font-medium text-gray-600 hidden sm:inline">Active</span>
               <input
                 type="checkbox"
                 name="isActive"
-                className="toggle toggle-xs toggle-success ml-1"
+                className="toggle toggle-xs toggle-success"
                 checked={formData.isActive}
                 onChange={handleInputChange}
               />
             </div>
             <button
               onClick={handleSave}
-              disabled={isSaving}
-              className="btn btn-sm bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none rounded-lg shadow-md gap-2 px-6"
+              disabled={isSaving || isSubscriptionExpired}
+              className={`btn btn-sm border-none rounded-lg shadow-md gap-1.5 px-3 sm:px-5 ${
+                isSubscriptionExpired
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-[#1C4D8D] hover:bg-[#153e75] text-white"
+              }`}
             >
               {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-              {isEditMode ? "Update" : "Create Agent"}
+              <span className="hidden sm:inline">{isEditMode ? "Update" : "Create Agent"}</span>
+              <span className="sm:hidden">{isEditMode ? "Update" : "Create"}</span>
             </button>
           </div>
         </div>
       </div>
 
+      {/* SUBSCRIPTION WARNING */}
+      <SubscriptionWarning subscriptionExpiry={user?.subscriptionExpiry} userRole={user?.role} />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* LEFT: CONFIGURATION (Full width on mobile, 7 cols on LG) */}
         <div
-          className={`flex flex-col gap-6 transition-all duration-300 
+          className={`flex flex-col gap-4 transition-all duration-300 
              ${activeTab === "general" ? "lg:col-span-7 xl:col-span-8" : "lg:col-span-12"}`}
         >
-          {/* TABS NAVIGATION (Modern Pills) */}
+          {/* TABS NAVIGATION (Modern Pills) - Outside sticky header */}
           <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 scrollbar-hide">
             {[
               { id: "general", label: "General", icon: <FaBrain /> },
@@ -287,13 +363,14 @@ const AgentBuilder = () => {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
+                disabled={isTabLoading}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap
                             ${
                               activeTab === tab.id
                                 ? "bg-[#1C4D8D] text-white shadow-lg shadow-blue-900/10"
                                 : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                            }`}
+                            } ${isTabLoading ? "opacity-50 cursor-wait" : ""}`}
               >
                 {tab.icon} {tab.label}
               </button>
@@ -302,32 +379,42 @@ const AgentBuilder = () => {
 
           {/* TAB CONTENT AREA */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 min-h-150 relative overflow-hidden">
-            <div className={activeTab === "general" ? "block" : "hidden"}>
-              <GeneralTab
-                formData={formData}
-                handleChange={handleInputChange}
-                handleFileChange={handleFileChange}
-                previewImage={previewImage || currentAgent?.welcomeImageUrl}
-                handoffConfig={handoffConfig}
-                setHandoffConfig={setHandoffConfig}
-              />
-            </div>
+            {isTabLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <FaSpinner className="animate-spin text-4xl text-[#1C4D8D] mb-4" />
+                <p className="text-gray-500 text-sm">Memuat konten...</p>
+              </div>
+            ) : (
+              <>
+                <div className={activeTab === "general" ? "block" : "hidden"}>
+                  <GeneralTab
+                    formData={formData}
+                    handleChange={handleInputChange}
+                    handleFileChange={handleFileChange}
+                    previewImage={shouldRemoveImage ? null : (previewImage || (!shouldRemoveImage && currentAgent?.welcomeImageUrl ? currentAgent.welcomeImageUrl : null))}
+                    handoffConfig={handoffConfig}
+                    setHandoffConfig={setHandoffConfig}
+                    onRemoveImage={handleRemoveImage}
+                  />
+                </div>
 
-            <div className={activeTab === "knowledge" ? "block" : "hidden"}>
-              <KnowledgeTab
-                agentId={id}
-                isEditMode={isEditMode}
-                knowledgeSources={currentAgent?.KnowledgeSources || []}
-                pendingKnowledge={pendingKnowledge} // Pass pending state
-                onAddPending={handleAddPendingKnowledge}
-                onRemovePending={handleRemovePendingKnowledge}
-              />
-            </div>
+                <div className={activeTab === "knowledge" ? "block" : "hidden"}>
+                  <KnowledgeTab
+                    agentId={id}
+                    isEditMode={isEditMode}
+                    knowledgeSources={currentAgent?.KnowledgeSources || []}
+                    pendingKnowledge={pendingKnowledge} // Pass pending state
+                    onAddPending={handleAddPendingKnowledge}
+                    onRemovePending={handleRemovePendingKnowledge}
+                  />
+                </div>
 
-            {activeTab === "followups" && (
-              <FollowupTab config={followupConfig} setConfig={setFollowupConfig} />
+                {activeTab === "followups" && (
+                  <FollowupTab config={followupConfig} setConfig={setFollowupConfig} />
+                )}
+                {activeTab === "evaluation" && <EvaluationTab agentId={id} />}
+              </>
             )}
-            {activeTab === "evaluation" && <EvaluationTab agentId={id} />}
           </div>
         </div>
 
@@ -351,6 +438,7 @@ const AgentBuilder = () => {
                 welcomeMessage={formData.welcomeMessage}
                 welcomeImageUrl={previewImage || currentAgent?.welcomeImageUrl || ""}
                 isActive={formData.isActive}
+                followupConfig={followupConfig}
               />
               <div className="mt-4 bg-blue-50/50 rounded-xl p-4 border border-blue-100 text-xs text-blue-800 leading-relaxed">
                 <p className="font-semibold mb-1">AI agent chat preview</p>

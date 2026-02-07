@@ -20,7 +20,7 @@ const FollowupTab = ({ config, setConfig }) => {
           <div>
             <h3 className="font-bold text-gray-800 text-lg">Follow-up Automation</h3>
             <p className="text-sm text-gray-500">
-              Otomatis menyapa kembali customer yang tidak merespon (Ghosting).
+              Otomatis menyapa kembali customer yang tidak merespon pesan.
             </p>
           </div>
         </div>

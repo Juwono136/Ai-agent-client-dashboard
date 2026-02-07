@@ -16,6 +16,8 @@ import {
   FaSort,
   FaSortUp,
   FaSortDown,
+  FaCalendarTimes,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { updateUserSession } from "../features/auth/authSlice";
@@ -196,19 +198,27 @@ const UserList = () => {
                     Bergabung {getSortIcon("createdAt")}
                   </div>
                 </th>
+                <th
+                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => handleSort("subscriptionExpiry")}
+                >
+                  <div className="flex items-center gap-2">
+                    Masa Berlaku {getSortIcon("subscriptionExpiry")}
+                  </div>
+                </th>
                 <th className="text-center pr-6">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" className="py-12">
+                  <td colSpan="6" className="py-12">
                     <Loader type="block" text="Sedang memuat data users..." />
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center py-12 text-gray-400 italic">
+                  <td colSpan="6" className="text-center py-12 text-gray-400 italic">
                     Tidak ada data user yang ditemukan.
                   </td>
                 </tr>
@@ -255,6 +265,65 @@ const UserList = () => {
                         month: "short",
                         year: "numeric",
                       })}
+                    </td>
+                    <td>
+                      {user.role === "customer" ? (
+                        user.subscriptionExpiry ? (
+                          (() => {
+                            const expiryDate = new Date(user.subscriptionExpiry);
+                            const now = new Date();
+                            const isExpired = expiryDate < now;
+                            const daysUntilExpiry = Math.ceil(
+                              (expiryDate - now) / (1000 * 60 * 60 * 24),
+                            );
+
+                            return (
+                              <div className="flex flex-col gap-1">
+                                <div
+                                  className={`text-xs font-semibold ${
+                                    isExpired ? "text-red-600" : daysUntilExpiry <= 7 ? "text-yellow-600" : "text-green-600"
+                                  }`}
+                                >
+                                  {expiryDate.toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </div>
+                                <div
+                                  className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded w-fit ${
+                                    isExpired
+                                      ? "bg-red-50 text-red-600"
+                                      : daysUntilExpiry <= 7
+                                        ? "bg-yellow-50 text-yellow-600"
+                                        : "bg-green-50 text-green-600"
+                                  }`}
+                                >
+                                  {isExpired ? (
+                                    <>
+                                      <FaExclamationTriangle /> Habis
+                                    </>
+                                  ) : daysUntilExpiry <= 7 ? (
+                                    <>
+                                      <FaCalendarTimes /> {daysUntilExpiry} hari lagi
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FaCheckCircle /> Aktif
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded w-fit">
+                            <FaExclamationTriangle /> Belum Diaktifkan
+                          </div>
+                        )
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">-</span>
+                      )}
                     </td>
                     <td className="pr-6">
                       <div className="flex justify-center gap-2">

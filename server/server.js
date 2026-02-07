@@ -16,11 +16,13 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import platformRoutes from "./routes/platformRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 
 // Models
 import User from "./models/User.js";
 import Agent from "./models/Agent.js";
 import KnowledgeSource from "./models/KnowledgeSource.js";
+import ConversationLog from "./models/ConversationLog.js";
 import ConnectedPlatform from "./models/ConnectedPlatform.js";
 
 dotenv.config();
@@ -60,6 +62,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/agents", agentRoutes);
 app.use("/api/platforms", platformRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // --- Error Handling Middleware ---
 // HAPUS blok app.use((err...)) yang lama (manual).
@@ -88,6 +91,14 @@ ConnectedPlatform.belongsTo(User, { foreignKey: "userId" });
 // Untuk simplifikasi SaaS cekat.ai: 1 Platform punya 1 Active Agent.
 Agent.hasMany(ConnectedPlatform, { foreignKey: "agentId" });
 ConnectedPlatform.belongsTo(Agent, { foreignKey: "agentId" });
+
+// 5. Agent -> ConversationLog
+Agent.hasMany(ConversationLog, { foreignKey: "agentId", onDelete: "CASCADE" });
+ConversationLog.belongsTo(Agent, { foreignKey: "agentId" });
+
+// 6. ConnectedPlatform -> ConversationLog (optional)
+ConnectedPlatform.hasMany(ConversationLog, { foreignKey: "platformId", onDelete: "SET NULL" });
+ConversationLog.belongsTo(ConnectedPlatform, { foreignKey: "platformId" });
 
 const startServer = async () => {
   try {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FaRobot, FaCommentDots, FaExchangeAlt, FaImage, FaCloudUploadAlt } from "react-icons/fa";
+import { FaRobot, FaCommentDots, FaExchangeAlt, FaImage, FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 
 // Helper Component untuk Character Counter
 const CharCount = ({ current, max }) => (
@@ -16,6 +16,7 @@ const GeneralTab = ({
   previewImage,
   handoffConfig,
   setHandoffConfig,
+  onRemoveImage,
 }) => {
   const updateHandoffConfig = (updates) => {
     setHandoffConfig((prev) => ({ ...prev, ...updates }));
@@ -150,18 +151,45 @@ const GeneralTab = ({
                   alt="Preview Welcome"
                   className="w-full h-full object-cover"
                 />
+                {/* Delete Button - Always Visible with higher z-index */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
+                    console.log("Delete button clicked, onRemoveImage:", onRemoveImage);
+                    if (onRemoveImage && typeof onRemoveImage === "function") {
+                      onRemoveImage(e);
+                    }
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-lg shadow-lg transition-all z-50 flex items-center justify-center cursor-pointer"
+                  title="Hapus Gambar"
+                >
+                  <FaTimes size={12} />
+                </button>
                 {/* Overlay ganti gambar */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer z-10 pointer-events-none">
                   <FaCloudUploadAlt size={24} />
                   <span className="text-xs font-medium mt-1">Ganti Gambar</span>
-                  <input
-                    type="file"
-                    name="welcomeImage"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
                 </div>
+                <input
+                  type="file"
+                  name="welcomeImage"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  onClick={(e) => {
+                    // Don't trigger if clicking delete button
+                    const target = e.target;
+                    if (target.closest('button[title="Hapus Gambar"]')) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }}
+                />
               </div>
             ) : (
               // TAMPILKAN UPLOAD BOX JIKA KOSONG

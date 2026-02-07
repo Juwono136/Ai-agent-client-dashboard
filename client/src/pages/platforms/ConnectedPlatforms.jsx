@@ -19,30 +19,82 @@ import {
   FaQrcode,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
+import useDebounce from "../../hooks/useDebounce";
 
 import PlatformModal from "../../components/platforms/PlatformModal";
 import Loader from "../../components/Loader";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import PlatformListFilters from "../../components/platforms/PlatformListFilters";
+import PlatformListPagination from "../../components/platforms/PlatformListPagination";
+import AgentListLoading from "../../components/agents/AgentListLoading";
+
+const ITEMS_PER_PAGE = 9;
 
 const ConnectedPlatforms = () => {
   const dispatch = useDispatch();
-  const { platforms, isLoading, isError, message } = useSelector((state) => state.platforms);
+  const { platforms, isLoading, isError, message, pagination } = useSelector(
+    (state) => state.platforms,
+  );
   const { agents } = useSelector((state) => state.agents);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [confirmState, setConfirmState] = useState({ isOpen: false, platform: null });
 
-  const [loadingText, setLoadingText] = useState("Memproses...");
+  // Filter & Sort State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("updatedAt");
+  const [sortOrder, setSortOrder] = useState("desc");
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Loading state for filters (separate from main loading)
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+
+  // Debounce search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Initial load agents
   useEffect(() => {
-    dispatch(getPlatforms());
     dispatch(getAgents());
   }, [dispatch]);
 
+  // Fetch platforms with filters
+  useEffect(() => {
+    const fetchPlatforms = async () => {
+      setIsFilterLoading(true);
+      try {
+        await dispatch(
+          getPlatforms({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: debouncedSearchQuery || undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            sortBy,
+            sortOrder,
+          }),
+        );
+      } finally {
+        setIsFilterLoading(false);
+      }
+    };
+
+    fetchPlatforms();
+  }, [dispatch, currentPage, debouncedSearchQuery, statusFilter, sortBy, sortOrder]);
+
+  // Reset to page 1 when filters change (except page itself)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [debouncedSearchQuery, statusFilter, sortBy, sortOrder]);
+
+  // Handle notifications
   useEffect(() => {
     if (isError && message) {
-      toast.error(message);
+      toast.error(message, { id: "platform-status" });
       dispatch(resetPlatformState());
     }
   }, [isError, message, dispatch]);
@@ -67,41 +119,60 @@ const ConnectedPlatforms = () => {
 
   const handleConfirmDelete = async () => {
     if (!confirmState.platform) return;
-    setLoadingText("Menghapus koneksi...");
     const resultAction = await dispatch(deletePlatform(confirmState.platform.id));
     if (deletePlatform.fulfilled.match(resultAction)) {
-      toast.success("Koneksi berhasil dihapus");
+      toast.success("Koneksi berhasil dihapus", { id: "platform-delete-success" });
       handleCloseDeleteConfirm();
+      // Refetch platforms after deletion
+      dispatch(
+        getPlatforms({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: debouncedSearchQuery || undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          sortBy,
+          sortOrder,
+        }),
+      );
     }
   };
 
   // Handler Create/Update
   const handleModalSubmit = async (formData) => {
-    setLoadingText("Menyimpan konfigurasi..."); // Set teks
     if (selectedPlatform) {
       const resultAction = await dispatch(
         updatePlatform({ id: selectedPlatform.id, platformData: formData }),
       );
       if (updatePlatform.fulfilled.match(resultAction)) {
-        toast.success("Konfigurasi berhasil diperbarui");
+        toast.success("Konfigurasi berhasil diperbarui", { id: "platform-update-success" });
       }
       return null;
     } else {
       const resultAction = await dispatch(createPlatform(formData));
       if (createPlatform.fulfilled.match(resultAction)) {
         const created = resultAction.payload.data;
-        // Set agar modal langsung masuk mode scan QR
         setSelectedPlatform(created);
-        toast.success("Koneksi berhasil ditambahkan");
+        toast.success("Koneksi berhasil ditambahkan", { id: "platform-create-success" });
+        // Refetch platforms after creation
+        dispatch(
+          getPlatforms({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: debouncedSearchQuery || undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            sortBy,
+            sortOrder,
+          }),
+        );
         return created;
       }
       return null;
     }
   };
 
-  if (isLoading && platforms.length === 0) {
-    return <Loader type="block" text="Memuat koneksi..." />;
-  }
+  // Check if initial load
+  const isInitialLoad = isLoading && platforms.length === 0;
+  const isFiltering = isFilterLoading || (isLoading && platforms.length > 0);
 
   // Helper untuk Status Badge
   const getStatusBadge = (status) => {
@@ -132,134 +203,183 @@ const ConnectedPlatforms = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-10">
-      {isLoading && platforms.length > 0 && (
-        <Loader type="fullscreen" text="Memproses permintaan..." />
-      )}
-
+    <div className="space-y-6 animate-fade-in pb-10">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
             Connected Platforms
           </h1>
-          <p className="text-gray-500 mt-1">Kelola koneksi WhatsApp agar terhubung dengan AI Agent.</p>
+          <p className="text-gray-500 mt-1 text-sm">
+            Kelola koneksi WhatsApp agar terhubung dengan AI Agent.
+            {pagination?.total !== undefined && (
+              <span className="ml-2 font-medium text-gray-700">
+                ({pagination.total} platform)
+              </span>
+            )}
+          </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="btn bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none shadow-lg shadow-blue-900/20 rounded-xl gap-2 px-6"
+          className="btn btn-sm bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none shadow-lg shadow-blue-900/20 rounded-xl gap-2 px-4 h-9"
         >
           <FaPlus size={14} /> Tambah Nomor
         </button>
       </div>
 
+      {/* FILTERS - Professional Design */}
+      <PlatformListFilters
+        onSearchChange={setSearchQuery}
+        onFilterChange={setStatusFilter}
+        onSortChange={({ sortBy, sortOrder }) => {
+          setSortBy(sortBy);
+          setSortOrder(sortOrder);
+        }}
+        filters={{
+          searchQuery,
+          statusFilter,
+          sortBy,
+          sortOrder,
+        }}
+        isLoading={isFiltering}
+      />
+
       {/* CONTENT */}
-      {platforms.length === 0 ? (
+      {isInitialLoad ? (
+        <div className="py-8">
+          <AgentListLoading type="grid" message="Memuat platform..." />
+        </div>
+      ) : platforms.length === 0 ? (
         // EMPTY STATE
         <div className="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-gray-200 rounded-3xl text-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
             <FaWhatsapp size={40} />
           </div>
-          <h3 className="text-xl font-bold text-gray-800">Belum ada WhatsApp Terhubung</h3>
-          <p className="text-gray-500 mt-2 max-w-md">
-            Hubungkan platform anda dengan AI Agent untuk memulai bekerja.
+          <h3 className="text-xl font-bold text-gray-800">
+            {searchQuery || statusFilter !== "all"
+              ? "Tidak ada platform yang sesuai filter"
+              : "Belum ada WhatsApp Terhubung"}
+          </h3>
+          <p className="text-gray-500 mt-2 max-w-md text-sm">
+            {searchQuery || statusFilter !== "all"
+              ? "Coba ubah filter atau kata kunci pencarian Anda."
+              : "Hubungkan platform anda dengan AI Agent untuk memulai bekerja."}
           </p>
-          <button
-            onClick={handleOpenCreate}
-            className="mt-6 btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-xl px-8"
-          >
-            Mulai Koneksi
-          </button>
+          {(!searchQuery && statusFilter === "all") && (
+            <button
+              onClick={handleOpenCreate}
+              className="mt-6 btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-xl px-8"
+            >
+              Mulai Koneksi
+            </button>
+          )}
         </div>
       ) : (
-        // CARD GRID
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {platforms.map((pf) => (
-            <div
-              key={pf.id}
-              className="group relative bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {/* Card Top */}
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${pf.status === "WORKING" ? "bg-linear-to-br from-green-400 to-green-600 text-white" : "bg-gray-100 text-gray-400"}`}
-                  >
-                    <FaWhatsapp size={28} />
+        <>
+          {/* CARD GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {platforms.map((pf) => (
+              <div
+                key={pf.id}
+                className="group relative bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                {/* Card Top */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                        pf.status === "WORKING"
+                          ? "bg-gradient-to-br from-green-400 to-green-600 text-white"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      <FaWhatsapp size={28} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-800 truncate max-w-[150px]">{pf.name}</h3>
+                      <div className="mt-1">{getStatusBadge(pf.status)}</div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-800 truncate max-w-37.5">{pf.name}</h3>
-                    <div className="mt-1">{getStatusBadge(pf.status)}</div>
+
+                  {/* Actions Dropdown */}
+                  <div className="dropdown dropdown-end">
+                    <label
+                      tabIndex={0}
+                      className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:bg-gray-100"
+                    >
+                      <FaEllipsisV />
+                    </label>
+                    <ul
+                      tabIndex={0}
+                      className="dropdown-content z-[1] menu p-2 shadow-lg bg-white rounded-xl w-40 border border-gray-100 mt-2"
+                    >
+                      <li>
+                        <a
+                          onClick={() => handleOpenEdit(pf)}
+                          className="gap-2 font-medium text-gray-600"
+                        >
+                          <FaPen className="text-xs" /> Edit
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          onClick={() => handleOpenDeleteConfirm(pf)}
+                          className="gap-2 text-red-600 hover:bg-red-50 font-medium"
+                        >
+                          <FaTrash className="text-xs" /> Hapus
+                        </a>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
-                {/* Actions Dropdown */}
-                <div className="dropdown dropdown-end">
-                  <label
-                    tabIndex={0}
-                    className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:bg-gray-100"
-                  >
-                    <FaEllipsisV />
-                  </label>
-                  <ul
-                    tabIndex={0}
-                    className="dropdown-content z-1 menu p-2 shadow-lg bg-white rounded-xl w-40 border border-gray-100 mt-2"
-                  >
-                    <li>
-                      <a
-                        onClick={() => handleOpenEdit(pf)}
-                        className="gap-2 font-medium text-gray-600"
-                      >
-                        <FaPen className="text-xs" /> Edit
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        onClick={() => handleOpenDeleteConfirm(pf)}
-                        className="gap-2 text-red-600 hover:bg-red-50 font-medium"
-                      >
-                        <FaTrash className="text-xs" /> Hapus
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 transition-colors group-hover:bg-blue-50/50 group-hover:border-blue-100">
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <FaRobot className="text-[#1C4D8D]" />
-                    <span className="font-medium">AI Agent</span>
+                {/* Card Body */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 transition-colors group-hover:bg-blue-50/50 group-hover:border-blue-100">
+                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                      <FaRobot className="text-[#1C4D8D]" />
+                      <span className="font-medium">AI Agent</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">
+                      {pf.Agent ? (
+                        pf.Agent.name
+                      ) : (
+                        <span className="text-red-400 text-xs italic">Belum Dipilih</span>
+                      )}
+                    </span>
                   </div>
-                  {/* FIX DISPLAY AGENT NAME: Sekarang pasti ada karena Backend sudah diperbaiki */}
-                  <span className="text-sm font-bold text-gray-800 truncate max-w-30">
-                    {pf.Agent ? (
-                      pf.Agent.name
-                    ) : (
-                      <span className="text-red-400 text-xs italic">Belum Dipilih</span>
-                    )}
+                </div>
+
+                {/* Card Footer */}
+                <div className="mt-5 pt-4 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
+                  <span className="font-mono bg-gray-100 px-2 py-1 rounded text-[10px]">
+                    {pf.sessionId?.substring(0, 8)}...
                   </span>
+                  {pf.status === "SCANNING" && (
+                    <button
+                      onClick={() => handleOpenEdit(pf)}
+                      className="text-blue-600 hover:underline font-bold cursor-pointer text-xs flex items-center gap-1"
+                    >
+                      Lanjut Scan <FaQrcode />
+                    </button>
+                  )}
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Card Footer */}
-              <div className="mt-5 pt-4 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
-                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-[10px]">
-                  {pf.sessionId?.substring(0, 8)}...
-                </span>
-                {pf.status === "SCANNING" && (
-                  <button
-                    onClick={() => handleOpenEdit(pf)}
-                    className="text-blue-600 hover:underline font-bold cursor-pointer text-xs flex items-center gap-1"
-                  >
-                    Lanjut Scan <FaQrcode />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+          {/* PAGINATION */}
+          {pagination && pagination.totalPages > 1 && (
+            <PlatformListPagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              onPageChange={setCurrentPage}
+              isLoading={isFiltering}
+            />
+          )}
+        </>
       )}
 
       {/* MODAL WIZARD */}
