@@ -155,21 +155,20 @@ const AgentList = () => {
 
   return (
     <div className="space-y-3 animate-[fadeIn_0.5s_ease-out]">
-      {/* HEADER - Clean and Compact */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 pb-2 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 pb-2 border-b border-[var(--color-border)]">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900">My AI Agents</h1>
-          <p className="text-gray-500 text-xs mt-0.5">
+          <h1 className="text-lg sm:text-xl font-bold text-[var(--color-text)]">My AI Agents</h1>
+          <p className="text-[var(--color-text-muted)] text-xs mt-0.5">
             Kelola asisten AI Agent{" "}
-            <span className="font-semibold text-[#1C4D8D]">({totalAgents})</span>
+            <span className="font-semibold text-[var(--color-primary)]">({totalAgents})</span>
           </p>
         </div>
         <Link
           to="/ai-agents/create"
           className={`btn btn-sm border-none rounded-md gap-1.5 shadow-sm normal-case px-3 h-8 ${
             isSubscriptionExpired
-              ? "bg-gray-400 text-white cursor-not-allowed pointer-events-none"
-              : "bg-[#1C4D8D] text-white hover:bg-[#153e75]"
+              ? "bg-[var(--color-text-muted)] text-white cursor-not-allowed pointer-events-none"
+              : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
           }`}
           onClick={(e) => {
             if (isSubscriptionExpired) {
@@ -210,16 +209,16 @@ const AgentList = () => {
           <AgentListLoading type="grid" message="Memuat daftar agents..." />
         </div>
       ) : agents.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border-2 border-dashed border-gray-300">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-md">
+        <div className="text-center py-16 bg-[var(--color-surface)] rounded-xl border-2 border-dashed border-[var(--color-border)]">
+          <div className="w-16 h-16 bg-[var(--color-primary)]/20 text-[var(--color-primary)] rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
             <FaRobot />
           </div>
-          <h3 className="font-bold text-gray-700 text-base mb-1.5">
+          <h3 className="font-bold text-[var(--color-text)] text-base mb-1.5">
             {searchQuery || statusFilter !== "all"
               ? "Tidak ada agent yang sesuai filter"
               : "Belum ada Agent"}
           </h3>
-          <p className="text-xs sm:text-sm text-gray-500 mb-4">
+          <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mb-4">
             {searchQuery || statusFilter !== "all"
               ? "Coba ubah filter atau kata kunci pencarian Anda."
               : "Mulai buat AI Agent pertamamu sekarang."}
@@ -227,7 +226,7 @@ const AgentList = () => {
           {!searchQuery && statusFilter === "all" && (
             <Link
               to="/ai-agents/create"
-              className="btn btn-sm bg-[#1C4D8D] text-white normal-case"
+              className="btn btn-sm bg-[var(--color-primary)] text-white normal-case hover:bg-[var(--color-primary-hover)]"
             >
               Buat Sekarang
             </Link>

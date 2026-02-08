@@ -287,21 +287,21 @@ const AgentBuilder = () => {
   return (
     <div className="pb-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* HEADER STICKY (Mobile Friendly) - Compact design */}
-      <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 -mx-4 px-4 sm:mx-0 sm:px-0 mb-4">
+      <div className="sticky top-0 z-10 bg-[var(--color-surface)]/95 backdrop-blur-sm border-b border-[var(--color-border)] -mx-4 px-4 sm:mx-0 sm:px-0 mb-4">
         {/* Compact Header Row */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 py-2 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => navigate("/ai-agents")}
-              className="btn btn-circle btn-ghost btn-sm text-gray-500 hover:bg-gray-200 flex-shrink-0"
+              className="btn btn-circle btn-ghost btn-sm text-[var(--color-text-muted)] hover:bg-[var(--color-border)] flex-shrink-0"
             >
               <FaArrowLeft />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-bold text-gray-800 leading-tight truncate">
+              <h1 className="text-base sm:text-lg font-bold text-[var(--color-text)] leading-tight truncate">
                 {isEditMode ? formData.name || "Loading..." : "New AI Agent"}
               </h1>
-              <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+              <div className="text-xs text-[var(--color-text-muted)] flex items-center gap-1.5 mt-0.5">
                 {isEditMode ? (
                   <span className="text-blue-600 font-medium">Editing Mode</span>
                 ) : (
@@ -314,11 +314,11 @@ const AgentBuilder = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
-            <div className="flex items-center gap-1.5 bg-white px-2 sm:px-2.5 py-1 rounded-full border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-1.5 bg-[var(--color-surface)] px-2 sm:px-2.5 py-1 rounded-full border border-[var(--color-border)] shadow-sm">
               <span
-                className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? "bg-green-500" : "bg-gray-300"}`}
+                className={`w-1.5 h-1.5 rounded-full ${formData.isActive ? "bg-green-500" : "bg-[var(--color-border)]"}`}
               ></span>
-              <span className="text-xs font-medium text-gray-600 hidden sm:inline">Active</span>
+              <span className="text-xs font-medium text-[var(--color-text-muted)] hidden sm:inline">Active</span>
               <input
                 type="checkbox"
                 name="isActive"
@@ -332,8 +332,8 @@ const AgentBuilder = () => {
               disabled={isSaving || isSubscriptionExpired}
               className={`btn btn-sm border-none rounded-lg shadow-md gap-1.5 px-3 sm:px-5 ${
                 isSubscriptionExpired
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-[#1C4D8D] hover:bg-[#153e75] text-white"
+                  ? "bg-[var(--color-text-muted)] text-white cursor-not-allowed"
+                  : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
               }`}
             >
               {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
@@ -368,8 +368,8 @@ const AgentBuilder = () => {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap
                             ${
                               activeTab === tab.id
-                                ? "bg-[#1C4D8D] text-white shadow-lg shadow-blue-900/10"
-                                : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
+                                ? "bg-[var(--color-primary)] text-white shadow-lg"
+                                : "bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] border border-[var(--color-border)]"
                             } ${isTabLoading ? "opacity-50 cursor-wait" : ""}`}
               >
                 {tab.icon} {tab.label}
@@ -378,11 +378,11 @@ const AgentBuilder = () => {
           </div>
 
           {/* TAB CONTENT AREA */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 min-h-150 relative overflow-hidden">
+          <div className="bg-[var(--color-surface)] rounded-3xl shadow-sm border border-[var(--color-border)] p-6 sm:p-8 min-h-150 relative overflow-hidden">
             {isTabLoading ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <FaSpinner className="animate-spin text-4xl text-[#1C4D8D] mb-4" />
-                <p className="text-gray-500 text-sm">Memuat konten...</p>
+                <FaSpinner className="animate-spin text-4xl text-[var(--color-primary)] mb-4" />
+                <p className="text-[var(--color-text-muted)] text-sm">Memuat konten...</p>
               </div>
             ) : (
               <>
@@ -426,7 +426,7 @@ const AgentBuilder = () => {
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                   Simulator
                 </span>
-                <span className="badge badge-sm bg-white border-gray-200 text-xs">
+                <span className="badge badge-sm text-xs">
                   Live Preview
                 </span>
               </div>

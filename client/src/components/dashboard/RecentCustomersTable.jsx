@@ -20,25 +20,25 @@ const RecentCustomersTable = ({ customers, isLoading }) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-gray-800">Customer Terbaru</h3>
-          <Link to="/users" className="text-sm text-[#1C4D8D] font-bold hover:underline">
+          <h3 className="text-lg font-bold text-[var(--color-text)]">Customer Terbaru</h3>
+          <Link to="/users" className="text-sm text-[var(--color-primary)] font-bold hover:underline">
             Lihat Semua
           </Link>
         </div>
         <div className="flex items-center justify-center py-12">
-          <FaSpinner className="animate-spin text-gray-400 text-2xl" />
+          <FaSpinner className="animate-spin text-[var(--color-text-muted)] text-2xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-800">Customer Terbaru</h3>
-        <Link to="/users" className="text-sm text-[#1C4D8D] font-bold hover:underline">
+        <h3 className="text-lg font-bold text-[var(--color-text)]">Customer Terbaru</h3>
+        <Link to="/users" className="text-sm text-[var(--color-primary)] font-bold hover:underline">
           Lihat Semua
         </Link>
       </div>
@@ -46,7 +46,7 @@ const RecentCustomersTable = ({ customers, isLoading }) => {
         {customers && customers.length > 0 ? (
           <table className="table w-full min-w-125">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 border-b-0">
+              <tr className="bg-[var(--color-bg)] text-[var(--color-text-muted)] border-b border-[var(--color-border)]">
                 <th>Nama</th>
                 <th>Email</th>
                 <th>Status</th>
@@ -56,19 +56,19 @@ const RecentCustomersTable = ({ customers, isLoading }) => {
               {customers.map((customer, idx) => (
                 <tr
                   key={customer.id}
-                  className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                    idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                  className={`border-b border-[var(--color-border)] hover:bg-[var(--color-border)]/30 transition-colors ${
+                    idx % 2 === 0 ? "bg-[var(--color-surface)]" : "bg-[var(--color-bg)]/50"
                   }`}
                 >
-                  <td className="font-bold whitespace-nowrap">{customer.name}</td>
-                  <td className="text-gray-600">{customer.email}</td>
+                  <td className="font-bold whitespace-nowrap text-[var(--color-text)]">{customer.name}</td>
+                  <td className="text-[var(--color-text-muted)]">{customer.email}</td>
                   <td>{getStatusBadge(customer.status)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-[var(--color-text-muted)]">
             <p className="text-sm">Belum ada customer</p>
           </div>
         )}

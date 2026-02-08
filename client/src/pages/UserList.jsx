@@ -101,11 +101,11 @@ const UserList = () => {
 
   // Helper Icon Sort
   const getSortIcon = (field) => {
-    if (params.sortBy !== field) return <FaSort className="text-gray-300" />;
+    if (params.sortBy !== field) return <FaSort className="text-[var(--color-text-muted)]" />;
     return params.order === "ASC" ? (
-      <FaSortUp className="text-[#1C4D8D]" />
+      <FaSortUp className="text-[var(--color-primary)]" />
     ) : (
-      <FaSortDown className="text-[#1C4D8D]" />
+      <FaSortDown className="text-[var(--color-primary)]" />
     );
   };
 
@@ -140,25 +140,23 @@ const UserList = () => {
 
   return (
     <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
-          <p className="text-gray-500 text-sm">Kelola akses sistem secara terpusat.</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">User Management</h1>
+          <p className="text-[var(--color-text-muted)] text-sm">Kelola akses sistem secara terpusat.</p>
         </div>
         <button
           onClick={() => {
             setSelectedUser(null);
             setIsFormOpen(true);
           }}
-          className="btn bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none rounded-xl normal-case gap-2 shadow-lg"
+          className="btn bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none rounded-xl normal-case gap-2 shadow-lg"
         >
           <FaPlus /> Tambah User
         </button>
       </div>
 
-      {/* CONTROLS */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
+      <div className="bg-[var(--color-surface)] p-4 rounded-2xl shadow-sm border border-[var(--color-border)] flex flex-col md:flex-row gap-4">
         <TableSearch onSearch={handleSearch} placeholder="Cari nama atau email..." />
         <TableFilter
           label="Semua Role"
@@ -171,27 +169,26 @@ const UserList = () => {
         />
       </div>
 
-      {/* TABLE CONTENT */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="table w-full min-w-175">
-            <thead className="bg-gray-50 text-gray-600 font-bold uppercase text-xs">
+            <thead className="bg-[var(--color-bg)] text-[var(--color-text-muted)] font-bold uppercase text-xs border-b border-[var(--color-border)]">
               <tr>
                 <th
-                  className="py-4 pl-6 cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="py-4 pl-6 cursor-pointer hover:bg-[var(--color-border)]/50 transition-colors"
                   onClick={() => handleSort("name")}
                 >
                   <div className="flex items-center gap-2">User Info {getSortIcon("name")}</div>
                 </th>
                 <th
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-[var(--color-border)]/50 transition-colors"
                   onClick={() => handleSort("role")}
                 >
                   <div className="flex items-center gap-2">Role {getSortIcon("role")}</div>
                 </th>
                 <th>Status</th>
                 <th
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-[var(--color-border)]/50 transition-colors"
                   onClick={() => handleSort("createdAt")}
                 >
                   <div className="flex items-center gap-2">
@@ -199,7 +196,7 @@ const UserList = () => {
                   </div>
                 </th>
                 <th
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-[var(--color-border)]/50 transition-colors"
                   onClick={() => handleSort("subscriptionExpiry")}
                 >
                   <div className="flex items-center gap-2">
@@ -218,7 +215,7 @@ const UserList = () => {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-12 text-gray-400 italic">
+                  <td colSpan="6" className="text-center py-12 text-[var(--color-text-muted)] italic">
                     Tidak ada data user yang ditemukan.
                   </td>
                 </tr>
@@ -226,24 +223,24 @@ const UserList = () => {
                 users.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                    className="border-b border-[var(--color-border)] hover:bg-[var(--color-border)]/30 transition-colors"
                   >
                     <td className="py-4 pl-6">
                       <div className="flex items-center gap-3">
                         <div className="avatar placeholder">
-                          <div className="bg-blue-100 text-[#1C4D8D] rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm">
+                          <div className="bg-[var(--color-primary)]/20 text-[var(--color-primary)] rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm">
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                         </div>
                         <div>
-                          <div className="font-bold text-gray-800">{user.name}</div>
-                          <div className="text-xs text-gray-500">{user.email}</div>
+                          <div className="font-bold text-[var(--color-text)]">{user.name}</div>
+                          <div className="text-xs text-[var(--color-text-muted)]">{user.email}</div>
                         </div>
                       </div>
                     </td>
                     <td>
                       <span
-                        className={`badge border-none font-bold capitalize py-3 ${user.role === "admin" ? "bg-purple-100 text-purple-600" : "bg-blue-50 text-[#1C4D8D]"}`}
+                        className={`badge border-none font-bold capitalize py-3 ${user.role === "admin" ? "bg-purple-100 text-purple-600" : "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"}`}
                       >
                         {user.role}
                       </span>
@@ -259,7 +256,7 @@ const UserList = () => {
                         </div>
                       )}
                     </td>
-                    <td className="text-sm text-gray-500">
+                    <td className="text-sm text-[var(--color-text-muted)]">
                       {new Date(user.createdAt).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -322,7 +319,7 @@ const UserList = () => {
                           </div>
                         )
                       ) : (
-                        <span className="text-xs text-gray-400 italic">-</span>
+                        <span className="text-xs text-[var(--color-text-muted)] italic">-</span>
                       )}
                     </td>
                     <td className="pr-6">
@@ -332,7 +329,7 @@ const UserList = () => {
                             setSelectedUser(user);
                             setIsFormOpen(true);
                           }}
-                          className="btn btn-sm btn-square btn-ghost text-gray-500 hover:text-[#1C4D8D] hover:bg-blue-50"
+                          className="btn btn-sm btn-square btn-ghost text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10"
                         >
                           <FaEdit />
                         </button>

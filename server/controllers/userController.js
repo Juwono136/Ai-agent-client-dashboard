@@ -18,7 +18,7 @@ export const createUser = async (req, res, next) => {
 
     // Generate Secure Random Password
     const randomHex = crypto.randomBytes(4).toString("hex");
-    const tempPassword = `${randomHex}Cekat!`; // Contoh: a1b2c3d4Cekat!
+    const tempPassword = `${randomHex}Sapaku!`; // Contoh: a1b2c3d4Sapaku!
 
     // Calculate subscription expiry date (only for customer)
     let subscriptionExpiry = null;
@@ -59,7 +59,7 @@ export const createUser = async (req, res, next) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: "Selamat Datang di Cekat.ai - Kredensial Akses",
+        subject: "Selamat Datang di Sapaku.ai - Kredensial Akses",
         html: emailHtml,
       });
     } catch (error) {

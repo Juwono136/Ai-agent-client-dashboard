@@ -6,10 +6,9 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
 
-  // Helper untuk Active Link (Sesuai kode lama Anda)
   const isActive = (path) =>
     location.pathname === path
-      ? "bg-[#4988C4] text-white shadow-md"
+      ? "bg-[var(--sidebar-active)] text-white shadow-md"
       : "text-white/80 hover:bg-white/10 hover:text-white";
 
   const handleMenuClick = () => {
@@ -28,13 +27,12 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-72 bg-[#1C4D8D] text-white flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 z-40 h-screen w-72 bg-[var(--sidebar-bg)] text-white flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div>
-          {/* Header Sidebar */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-white/10 bg-black/10">
             <h1 className="text-2xl font-extrabold tracking-tight">
-              Cekat<span className="text-[#BDE8F5]">.ai</span>
+              Sapaku<span className="text-[var(--sidebar-accent)]">.ai</span>
             </h1>
             {/* Tombol Close di Mobile */}
             <button onClick={toggleSidebar} className="lg:hidden text-white/70 hover:text-white">
@@ -44,7 +42,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
 
           {/* Menu Items */}
           <ul className="p-4 space-y-2">
-            <p className="px-2 text-xs font-bold text-[#BDE8F5]/50 uppercase tracking-wider mb-2">
+            <p className="px-2 text-xs font-bold text-[var(--sidebar-accent)]/50 uppercase tracking-wider mb-2">
               Main Menu
             </p>
 
@@ -101,13 +99,13 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
         <div className="p-4 bg-black/10">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="avatar placeholder">
-              <div className="bg-[#BDE8F5] text-[#1C4D8D] rounded-full w-10 border-2 border-white/20 flex items-center justify-center">
+              <div className="bg-[var(--sidebar-accent)] text-[var(--sidebar-bg)] rounded-full w-10 border-2 border-white/20 flex items-center justify-center">
                 <span className="text-lg font-bold">{user?.name?.charAt(0).toUpperCase()}</span>
               </div>
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="font-bold text-sm truncate">{user?.name}</span>
-              <span className="text-xs text-[#BDE8F5]/70 uppercase tracking-wider">
+              <span className="text-xs text-[var(--sidebar-accent)]/70 uppercase tracking-wider">
                 {user?.role}
               </span>
             </div>
@@ -115,7 +113,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
 
           <button
             onClick={onLogoutClick}
-            className="btn btn-outline btn-sm w-full border-white/30 text-white hover:bg-white hover:text-[#1C4D8D] hover:border-white transition-colors gap-2"
+            className="btn btn-outline btn-sm w-full border-white/30 text-white hover:bg-white hover:text-[var(--sidebar-bg)] hover:border-white transition-colors gap-2"
           >
             <FaSignOutAlt /> Keluar Aplikasi
           </button>

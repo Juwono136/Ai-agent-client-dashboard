@@ -79,7 +79,7 @@ export const forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ where: { email: req.body.email } });
     if (!user) {
-      return next(new AppError("Email tidak ditemukan dalam sistem.", 404));
+      return next(new AppError("Email tidak ditemukan.", 404));
     }
 
     // Generate Random Token
@@ -98,7 +98,7 @@ export const forgotPassword = async (req, res, next) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: "Reset Password - Cekat.ai",
+        subject: "Reset Password - Sapaku.ai",
         html: message,
       });
 

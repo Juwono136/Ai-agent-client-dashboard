@@ -1,17 +1,14 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { Suspense, lazy } from "react"; // Import Suspense & Lazy
+import { Suspense, lazy } from "react";
+import { useSelector } from "react-redux";
 
-// Import Komponen Loader
 import Loader from "./components/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 
-// --- LAZY LOAD PAGES ---
-// Teknik ini membuat halaman hanya didownload saat dibutuhkan
-// Efeknya: Aplikasi lebih ringan di awal, dan kita bisa menampilkan Loader saat pindah halaman
-// const ConstructionPage = lazy(() => import("./pages/ConstructionPage"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -22,10 +19,33 @@ const AgentList = lazy(() => import("./pages/agents/AgentList"));
 const AgentBuilder = lazy(() => import("./pages/agents/AgentBuilder"));
 const ConnectedPlatforms = lazy(() => import("./pages/platforms/ConnectedPlatforms"));
 
+const AUTH_PATHS = ["/login", "/forgot-password", "/reset-password"];
+function isAuthPath(pathname) {
+  return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+function ThemeSync() {
+  const mode = useSelector((state) => state.theme?.mode ?? "light");
+  const location = useLocation();
+  useEffect(() => {
+    const root = document.documentElement;
+    const forceLight = isAuthPath(location.pathname);
+    if (forceLight) {
+      root.classList.remove("dark");
+    } else if (mode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [mode, location.pathname]);
+  return null;
+}
+
 function App() {
   return (
     <>
       <BrowserRouter>
+        <ThemeSync />
         {/* Suspense akan menampilkan <Loader /> selama halaman tujuan sedang dimuat */}
         <Suspense fallback={<Loader fullScreen={true} text="Memuat Halaman..." />}>
           <Routes>

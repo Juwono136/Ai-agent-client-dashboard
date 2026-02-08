@@ -107,7 +107,7 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
   }, [value]);
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-[#A7F3D0]">
+    <div className="bg-[var(--color-bg)] rounded-lg overflow-hidden border border-[var(--color-border)]">
       {/* Tambahkan style untuk handling gambar di dalam editor agar responsif */}
       <style>{`
         .ql-editor img {
@@ -116,7 +116,7 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
             height: auto;
             border-radius: 8px;
             margin: 10px 0;
-            border: 1px solid #eee;
+            border: 1px solid var(--color-border);
             object-fit: contain;
             display: block;
         }

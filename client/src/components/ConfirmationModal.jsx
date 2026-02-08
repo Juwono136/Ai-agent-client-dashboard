@@ -31,8 +31,8 @@ const ConfirmationModal = ({
     info: {
       icon: <FaInfoCircle />,
       iconBg: "bg-blue-100 text-blue-600",
-      btnColor: "bg-[#1C4D8D] hover:bg-[#153e75]",
-      focusRing: "focus:ring-blue-500",
+      btnColor: "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]",
+      focusRing: "focus:ring-[var(--color-primary)]",
     },
   };
 
@@ -40,7 +40,7 @@ const ConfirmationModal = ({
 
   return (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity animate-[fadeIn_0.2s_ease-out]">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 transform transition-all scale-100 animate-[scaleIn_0.2s_ease-out]">
+      <div className="bg-[var(--color-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 transform transition-all scale-100 animate-[scaleIn_0.2s_ease-out] border border-[var(--color-border)]">
         <div className="flex flex-col items-center text-center">
           {/* Icon Header */}
           <div
@@ -49,15 +49,14 @@ const ConfirmationModal = ({
             {config.icon}
           </div>
 
-          <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
-          <p className="text-gray-500 text-sm leading-relaxed mb-6">{message}</p>
+          <h3 className="text-xl font-bold text-[var(--color-text)] mb-2">{title}</h3>
+          <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-6">{message}</p>
 
           <div className="flex gap-3 w-full">
-            {/* Tombol Cancel */}
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 border border-gray-200 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 rounded-xl text-[var(--color-text)] font-medium hover:bg-[var(--color-border)] border border-[var(--color-border)] transition-colors disabled:opacity-50"
             >
               {cancelText}
             </button>

@@ -62,7 +62,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans overflow-hidden">
+    <div className="min-h-screen flex bg-[var(--color-bg)] font-sans overflow-hidden">
       <InfoModal
         isOpen={showSuccessModal}
         onClose={handleSuccessClose}
@@ -71,14 +71,14 @@ const ResetPassword = () => {
         type="success"
       />
       {/* --- KIRI: Branding --- */}
-      <div className="hidden lg:flex w-5/12 bg-[#1C4D8D] relative flex-col justify-between p-12 text-white">
+      <div className="hidden lg:flex w-5/12 bg-[var(--color-primary)] relative flex-col justify-between p-12 text-white">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 right-0 w-125 h-125 bg-[#4988C4]/40 rounded-full blur-3xl"></div>
         </div>
         <div className="relative z-10">
           <h1 className="text-3xl font-extrabold tracking-wide flex items-center gap-2">
-            Cekat<span className="text-[#BDE8F5]">.ai</span>
+            Sapaku<span className="text-[#BDE8F5]">.ai</span>
           </h1>
         </div>
         <div className="relative z-10 mb-20">
@@ -90,25 +90,24 @@ const ResetPassword = () => {
           </p>
         </div>
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Cekat.ai Technology.
+          © {new Date().getFullYear()} Sapaku.ai Technology.
         </div>
       </div>
       {/* --- KANAN: Form --- */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 md:p-12 bg-[#F3F4F6]">
-        <div className="w-full max-w-md bg-white p-10 rounded-3xl shadow-xl animate-[fadeInUp_0.8s_ease-out]">
+      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 md:p-12 bg-[var(--color-surface)]">
+        <div className="w-full max-w-md bg-[var(--color-bg)] p-10 rounded-3xl shadow-xl border border-[var(--color-border)] animate-[fadeInUp_0.8s_ease-out]">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-[#1C4D8D]">Password Baru</h2>
-            <p className="text-gray-500 mt-2">Silakan masukkan password baru untuk akun Anda.</p>
+            <h2 className="text-3xl font-bold text-[var(--color-primary)]">Password Baru</h2>
+            <p className="text-[var(--color-text-muted)] mt-2">Silakan masukkan password baru untuk akun Anda.</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
-            {/* Password Baru */}
             <div className="form-control group">
-              <label className="label text-xs font-bold text-gray-500 uppercase">
+              <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                 Password Baru
               </label>
               <div className="relative">
-                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1C4D8D] transition-colors">
+                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
                   <FaLock />
                 </div>
                 <input
@@ -116,25 +115,24 @@ const ResetPassword = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input input-bordered w-full pl-12 pr-12 py-6 bg-gray-50 focus:bg-white focus:border-[#1C4D8D] focus:ring-4 focus:ring-[#1C4D8D]/10 rounded-xl transition-all"
+                  className="input input-bordered w-full pl-12 pr-12 py-6 bg-[var(--color-surface)] focus:bg-[var(--color-bg)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10 rounded-xl transition-all border-[var(--color-border)] text-[var(--color-text)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#1C4D8D] cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] cursor-pointer"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
 
-            {/* Konfirmasi Password */}
             <div className="form-control group">
-              <label className="label text-xs font-bold text-gray-500 uppercase">
+              <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                 Konfirmasi Password
               </label>
               <div className="relative">
-                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1C4D8D] transition-colors">
+                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
                   <FaLock />
                 </div>
                 <input
@@ -142,14 +140,14 @@ const ResetPassword = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input input-bordered w-full pl-12 pr-12 py-6 bg-gray-50 focus:bg-white focus:border-[#1C4D8D] focus:ring-4 focus:ring-[#1C4D8D]/10 rounded-xl transition-all"
+                  className="input input-bordered w-full pl-12 pr-12 py-6 bg-[var(--color-surface)] focus:bg-[var(--color-bg)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10 rounded-xl transition-all border-[var(--color-border)] text-[var(--color-text)]"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="btn w-full bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none shadow-lg shadow-[#1C4D8D]/30 normal-case text-lg font-bold py-3 rounded-xl transition-all disabled:bg-gray-300"
+              className="btn w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-lg normal-case text-lg font-bold py-3 rounded-xl transition-all disabled:opacity-50"
               disabled={isLoading}
             >
               {isLoading ? (

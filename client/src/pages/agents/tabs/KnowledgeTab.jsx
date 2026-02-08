@@ -137,13 +137,13 @@ const KnowledgeTab = ({
   return (
     <div className="space-y-8 animate-fade-in w-full">
       {/* === FORM INPUT === */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-sm overflow-hidden">
         {/* Header Form */}
         <div
-          className={`px-6 py-4 border-b flex justify-between items-center ${formState.id || formState.tempId ? "bg-orange-50 border-orange-100" : "bg-[#ECFDF5] border-[#A7F3D0]"}`}
+          className={`px-6 py-4 border-b flex justify-between items-center ${formState.id || formState.tempId ? "bg-[var(--color-surface)] border-amber-200 dark:border-amber-800" : "bg-[var(--color-surface)] border-emerald-200 dark:border-emerald-800"} border-[var(--color-border)]`}
         >
           <div
-            className={`flex items-center gap-2 ${formState.id || formState.tempId ? "text-orange-700" : "text-[#065F46]"}`}
+            className={`flex items-center gap-2 ${formState.id || formState.tempId ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}`}
           >
             {formState.id || formState.tempId ? <FaEdit /> : <FaBook />}
             <h3 className="font-bold text-sm">
@@ -163,12 +163,12 @@ const KnowledgeTab = ({
         <div className="p-6 space-y-5">
           {/* Input Judul */}
           <div className="form-control">
-            <label className="label-text text-xs font-bold text-gray-700 mb-1">
+            <label className="label-text text-xs font-bold text-[var(--color-text)] mb-1">
               Judul Topik <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              className="input input-bordered w-full rounded-lg focus:ring-2 focus:ring-[#059669] focus:border-transparent"
+              className="input input-bordered w-full rounded-lg bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               placeholder="Contoh: Prosedur Pengembalian Barang..."
               value={formState.title}
               onChange={(e) => setFormState((prev) => ({ ...prev, title: e.target.value }))}
@@ -178,7 +178,7 @@ const KnowledgeTab = ({
           {/* Rich Text Editor */}
           <div className="form-control">
             <div className="flex justify-between mb-1">
-              <label className="label-text text-xs font-bold text-gray-700">
+              <label className="label-text text-xs font-bold text-[var(--color-text)]">
                 Konten Pengetahuan
               </label>
             </div>
@@ -212,7 +212,7 @@ const KnowledgeTab = ({
 
       {/* === LIST DATA === */}
       <div className="space-y-4">
-        <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2 border-b pb-2">
+        <h4 className="font-bold text-[var(--color-text)] text-sm flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
           <span className="badge badge-neutral badge-sm">
             {knowledgeSources?.length + pendingKnowledge?.length || 0}
           </span>
@@ -224,14 +224,14 @@ const KnowledgeTab = ({
           {pendingKnowledge?.map((item) => (
             <div
               key={item.tempId}
-              className="group relative bg-yellow-50 border border-yellow-200 rounded-xl p-5 hover:shadow-md transition-all"
+              className="group relative bg-[var(--color-surface)] border border-amber-200 dark:border-amber-700 rounded-xl p-5 hover:shadow-md transition-all"
             >
               <div className="badge badge-warning text-[10px] absolute top-3 right-3 font-bold">
                 Pending
               </div>
-              <h5 className="font-bold text-gray-800 mb-2">{item.title}</h5>
+              <h5 className="font-bold text-[var(--color-text)] mb-2">{item.title}</h5>
               <div
-                className="text-sm text-gray-600 line-clamp-2 mb-4"
+                className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-4"
                 dangerouslySetInnerHTML={{ __html: item.description }}
               />
               <div className="flex gap-2">
@@ -255,30 +255,30 @@ const KnowledgeTab = ({
           {knowledgeSources?.map((item) => (
             <div
               key={item.id}
-              className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all"
+              className="group bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 hover:border-[var(--color-primary)] hover:shadow-md transition-all"
             >
               <div className="flex justify-between items-start mb-2">
-                <h5 className="font-bold text-gray-800 text-base">{item.title || "Untitled"}</h5>
-                <span className="text-[10px] font-mono text-gray-400">
+                <h5 className="font-bold text-[var(--color-text)] text-base">{item.title || "Untitled"}</h5>
+                <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
                   ID: {item.id.substring(0, 6)}
                 </span>
               </div>
               <div
-                className="text-sm text-gray-500 line-clamp-2 mb-4 prose prose-sm max-w-none"
+                className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-4 prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: item.description }}
               />
 
-              <div className="flex items-center gap-3 pt-2 border-t border-gray-100 mt-2">
+              <div className="flex items-center gap-3 pt-2 border-t border-[var(--color-border)] mt-2">
                 <button
                   onClick={() => handleEdit(item, false)} // False = Server item
-                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                  className="flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] hover:opacity-80 hover:underline"
                 >
                   <FaEdit /> Edit
                 </button>
-                <span className="text-gray-300">|</span>
+                <span className="text-[var(--color-border)]">|</span>
                 <button
                   onClick={() => openDeleteConfirm(item)}
-                  className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-red-500 hover:underline"
+                  className="flex items-center gap-1 text-xs font-semibold text-[var(--color-text-muted)] hover:text-red-500 hover:underline"
                 >
                   <FaTrash /> Hapus Permanen
                 </button>
@@ -287,7 +287,7 @@ const KnowledgeTab = ({
           ))}
 
           {!knowledgeSources?.length && !pendingKnowledge?.length && (
-            <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed text-gray-400">
+            <div className="text-center py-10 bg-[var(--color-surface)] rounded-xl border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)]">
               <p>Belum ada data knowledge.</p>
             </div>
           )}

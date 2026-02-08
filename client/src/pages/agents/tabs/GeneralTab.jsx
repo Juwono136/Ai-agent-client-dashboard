@@ -3,7 +3,7 @@ import { FaRobot, FaCommentDots, FaExchangeAlt, FaImage, FaCloudUploadAlt, FaTim
 
 // Helper Component untuk Character Counter
 const CharCount = ({ current, max }) => (
-  <span className={`text-xs ${current > max ? "text-red-500 font-bold" : "text-gray-400"}`}>
+  <span className={`text-xs ${current > max ? "text-red-500 font-bold" : "text-[var(--color-text-muted)]"}`}>
     {current || 0} / {max} chars
   </span>
 );
@@ -62,14 +62,14 @@ const GeneralTab = ({
   return (
     <div className="space-y-8 animate-[fadeIn_0.3s_ease-out] max-w-4xl mx-auto">
       {/* 1. IDENTITY SECTION (Tetap Sama) */}
-      <section className="bg-white p-1">
-        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b pb-2">
-          <FaRobot className="text-[#1C4D8D]" /> Identitas & Behavior
+      <section className="p-1">
+        <h3 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
+          <FaRobot className="text-[var(--color-primary)]" /> Identitas & Behavior
         </h3>
         <div className="grid grid-cols-1 gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="form-control">
-              <label className="label-text font-semibold text-gray-700 mb-1">
+              <label className="label-text font-semibold text-[var(--color-text)] mb-1">
                 Nama Agent <span className="text-red-500">*</span>
               </label>
               <input
@@ -77,12 +77,12 @@ const GeneralTab = ({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="input input-bordered w-full rounded-lg focus:ring-1 focus:ring-[#1C4D8D]"
+                className="input input-bordered w-full rounded-lg bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-1 focus:ring-[var(--color-primary)]"
                 placeholder="Ex: CS Toko Batik"
               />
             </div>
             <div className="form-control">
-              <label className="label-text font-semibold text-gray-700 mb-1">
+              <label className="label-text font-semibold text-[var(--color-text)] mb-1">
                 Deskripsi Internal
               </label>
               <input
@@ -90,7 +90,7 @@ const GeneralTab = ({
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                className="input input-bordered w-full rounded-lg focus:ring-1 focus:ring-[#1C4D8D]"
+                className="input input-bordered w-full rounded-lg bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-1 focus:ring-[var(--color-primary)]"
                 placeholder="Catatan untuk admin..."
               />
             </div>
@@ -98,7 +98,7 @@ const GeneralTab = ({
 
           <div className="form-control">
             <div className="flex justify-between items-center mb-1">
-              <label className="label-text font-semibold text-gray-700">
+              <label className="label-text font-semibold text-[var(--color-text)]">
                 AI Agent Behavior (System Prompt)
               </label>
               <CharCount current={formData.systemInstruction?.length} max={15000} />
@@ -108,7 +108,7 @@ const GeneralTab = ({
               value={formData.systemInstruction}
               onChange={handleChange}
               maxLength={15000}
-              className="textarea textarea-bordered w-full rounded-lg h-64 font-mono text-sm leading-relaxed focus:ring-1 focus:ring-[#1C4D8D]"
+              className="textarea textarea-bordered w-full rounded-lg h-64 font-mono text-sm leading-relaxed bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-1 focus:ring-[var(--color-primary)]"
               placeholder="Anda adalah asisten virtual..."
             />
           </div>
@@ -117,14 +117,14 @@ const GeneralTab = ({
 
       {/* 2. GREETING SECTION (Updated Preview) */}
       <section>
-        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b pb-2">
-          <FaCommentDots className="text-[#1C4D8D]" /> Sapaan (Greeting)
+        <h3 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
+          <FaCommentDots className="text-[var(--color-primary)]" /> Sapaan (Greeting)
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Text Greeting */}
           <div className="lg:col-span-2 form-control">
             <div className="flex justify-between items-center mb-1">
-              <label className="label-text font-semibold text-gray-700">Welcome Message</label>
+              <label className="label-text font-semibold text-[var(--color-text)]">Welcome Message</label>
               <CharCount current={formData.welcomeMessage?.length} max={5000} />
             </div>
             <textarea
@@ -132,20 +132,20 @@ const GeneralTab = ({
               value={formData.welcomeMessage}
               onChange={handleChange}
               maxLength={5000}
-              className="textarea textarea-bordered w-full rounded-lg h-40 focus:ring-1 focus:ring-[#1C4D8D]"
+              className="textarea textarea-bordered w-full rounded-lg h-40 bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-1 focus:ring-[var(--color-primary)]"
               placeholder="Halo! Ada yang bisa saya bantu hari ini?"
             />
           </div>
 
           {/* Image Upload dengan PREVIEW LANGSUNG */}
           <div className="form-control">
-            <label className="label-text font-semibold text-gray-700 mb-1">
+            <label className="label-text font-semibold text-[var(--color-text)] mb-1">
               Gambar Sapaan (Opsional)
             </label>
 
             {previewImage ? (
               // TAMPILKAN PREVIEW JIKA ADA GAMBAR
-              <div className="relative group rounded-xl overflow-hidden border border-gray-200 h-40 bg-gray-50 flex items-center justify-center">
+              <div className="relative group rounded-xl overflow-hidden border border-[var(--color-border)] h-40 bg-[var(--color-bg)] flex items-center justify-center">
                 <img
                   src={previewImage}
                   alt="Preview Welcome"
@@ -193,7 +193,7 @@ const GeneralTab = ({
               </div>
             ) : (
               // TAMPILKAN UPLOAD BOX JIKA KOSONG
-              <div className="border-2 border-dashed border-gray-300 rounded-xl h-40 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#1C4D8D] transition-all relative cursor-pointer group">
+              <div className="border-2 border-dashed border-[var(--color-border)] rounded-xl h-40 flex flex-col items-center justify-center bg-[var(--color-bg)] hover:border-[var(--color-primary)] transition-all relative cursor-pointer group">
                 <input
                   type="file"
                   name="welcomeImage"
@@ -201,14 +201,14 @@ const GeneralTab = ({
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <div className="text-gray-400 group-hover:text-[#1C4D8D] transition-colors flex flex-col items-center">
+                <div className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-colors flex flex-col items-center">
                   <FaImage size={24} className="mb-2" />
                   <span className="text-xs font-medium">Upload Image</span>
                 </div>
               </div>
             )}
 
-            <p className="text-[10px] text-gray-400 mt-2">
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
               Gambar ini akan dikirim bersamaan dengan pesan sambutan saat user pertama kali chat.
             </p>
           </div>
@@ -217,14 +217,14 @@ const GeneralTab = ({
 
       {/* 3. HANDOFF SECTION (Updated) */}
       <section>
-        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b pb-2">
-          <FaExchangeAlt className="text-[#1C4D8D]" /> Human Handoff
+        <h3 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
+          <FaExchangeAlt className="text-[var(--color-primary)]" /> Human Handoff
         </h3>
-        <div className="bg-gray-50/60 border border-gray-100 rounded-2xl p-5 space-y-4">
+        <div className="bg-[var(--color-bg)]/60 border border-[var(--color-border)] rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-semibold text-gray-800">Aktifkan Human Handoff</h4>
-              <p className="text-xs text-gray-500">
+              <h4 className="font-semibold text-[var(--color-text)]">Aktifkan Human Handoff</h4>
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Jika aktif, AI akan mengeskalasi ke manusia saat kondisi terpenuhi.
               </p>
             </div>
@@ -239,7 +239,7 @@ const GeneralTab = ({
           {handoffConfig?.enabled && (
             <div className="grid grid-cols-1 gap-4">
               <div className="form-control">
-                <label className="label-text font-semibold text-gray-700 mb-1">
+                <label className="label-text font-semibold text-[var(--color-text)] mb-1">
                   Kata Kunci Pemicu (pisahkan dengan koma)
                 </label>
                 <input
@@ -247,7 +247,7 @@ const GeneralTab = ({
                   value={keywordInput}
                   onChange={(e) => handleKeywordInputChange(e.target.value)}
                   onBlur={handleKeywordInputBlur}
-                  className={`input input-bordered w-full rounded-lg focus:ring-1 focus:ring-[#1C4D8D] ${
+                  className={`input input-bordered w-full rounded-lg bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-1 focus:ring-[var(--color-primary)] ${
                     isKeywordInvalid ? "border-red-300 focus:ring-red-400" : ""
                   }`}
                   placeholder="contoh: admin, cs, operator, manusia"
@@ -261,7 +261,7 @@ const GeneralTab = ({
 
               <div className="form-control">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="label-text font-semibold text-gray-700">
+                  <label className="label-text font-semibold text-[var(--color-text)]">
                     Kondisi Handoff (aturan tambahan)
                   </label>
                   <CharCount current={handoffConfig?.conditionText?.length} max={750} />
@@ -270,14 +270,14 @@ const GeneralTab = ({
                   value={handoffConfig?.conditionText || ""}
                   onChange={(e) => updateHandoffConfig({ conditionText: e.target.value })}
                   maxLength={750}
-                  className="textarea textarea-bordered w-full rounded-lg h-24 focus:ring-1 focus:ring-[#1C4D8D]"
+                  className="textarea textarea-bordered w-full rounded-lg h-24 bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-1 focus:ring-[var(--color-primary)]"
                   placeholder="Contoh: Jika user meminta berbicara dengan manusia atau kasus sensitif."
                 />
               </div>
 
               <div className="form-control">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="label-text font-semibold text-gray-700">
+                  <label className="label-text font-semibold text-[var(--color-text)]">
                     Pesan Saat Dialihkan (Opsional)
                   </label>
                   <CharCount current={handoffConfig?.responseMessage?.length} max={300} />
@@ -286,7 +286,7 @@ const GeneralTab = ({
                   value={handoffConfig?.responseMessage || ""}
                   onChange={(e) => updateHandoffConfig({ responseMessage: e.target.value })}
                   maxLength={300}
-                  className="textarea textarea-bordered w-full rounded-lg h-20 focus:ring-1 focus:ring-[#1C4D8D]"
+                  className="textarea textarea-bordered w-full rounded-lg h-20 bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-1 focus:ring-[var(--color-primary)]"
                   placeholder="Contoh: Baik, saya hubungkan Anda ke tim kami."
                 />
               </div>

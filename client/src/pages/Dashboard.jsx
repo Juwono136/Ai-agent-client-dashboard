@@ -50,17 +50,17 @@ ChartJS.register(
 
 // --- WIDGET CARD COMPONENT ---
 const StatCard = ({ title, value, icon, colorClass, desc, isLoading }) => (
-  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+  <div className="bg-[var(--color-surface)] p-4 sm:p-6 rounded-2xl shadow-sm border border-[var(--color-border)] hover:shadow-md transition-shadow group">
     <div className="flex items-start justify-between mb-3 sm:mb-4">
       <div className="flex-1">
-        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">{title}</p>
+        <p className="text-xs sm:text-sm font-medium text-[var(--color-text-muted)] mb-1">{title}</p>
         {isLoading ? (
           <div className="flex items-center gap-2">
-            <FaSpinner className="animate-spin text-gray-400" />
-            <span className="text-gray-400">Loading...</span>
+            <FaSpinner className="animate-spin text-[var(--color-text-muted)]" />
+            <span className="text-[var(--color-text-muted)]">Loading...</span>
           </div>
         ) : (
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{value}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-[var(--color-text)]">{value}</h3>
         )}
       </div>
       <div
@@ -69,7 +69,7 @@ const StatCard = ({ title, value, icon, colorClass, desc, isLoading }) => (
         {icon}
       </div>
     </div>
-    {desc && <p className="text-xs text-gray-400">{desc}</p>}
+    {desc && <p className="text-xs text-[var(--color-text-muted)]">{desc}</p>}
   </div>
 );
 
@@ -91,10 +91,10 @@ const AdminDashboard = ({ user }) => {
   return (
     <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-[#1C4D8D] to-[#153e75] rounded-3xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-lg shadow-blue-900/20">
+      <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-3xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-lg shadow-[var(--color-primary)]/20">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Selamat Datang, Admin! 🚀</h1>
-          <p className="text-blue-100 opacity-90 max-w-xl">
+          <p className="text-white/90 max-w-xl">
             Pantau pertumbuhan user dan performa sistem secara realtime. Kelola akses pelanggan
             dengan mudah dari sini.
           </p>
@@ -109,8 +109,8 @@ const AdminDashboard = ({ user }) => {
         <AdminStatCard
           title="Total Customer"
           value={adminStats?.totalCustomers?.toString() || "0"}
-          icon={<FaUsers className="text-blue-600" />}
-          colorClass="bg-blue-50"
+          icon={<FaUsers className="text-blue-600 dark:text-blue-400" />}
+          colorClass="bg-blue-500/10 dark:bg-blue-500/20"
           desc={
             adminStats?.newCustomersThisWeek > 0
               ? `↗ ${adminStats.newCustomersThisWeek} user baru minggu ini`
@@ -121,8 +121,8 @@ const AdminDashboard = ({ user }) => {
         <AdminStatCard
           title="Active Subscription"
           value={adminStats?.activeSubscriptions?.toString() || "0"}
-          icon={<FaChartLine className="text-green-600" />}
-          colorClass="bg-green-50"
+          icon={<FaChartLine className="text-green-600 dark:text-green-400" />}
+          colorClass="bg-green-500/10 dark:bg-green-500/20"
           desc={
             adminStats?.activeSubscriptionPercentage !== undefined
               ? `${adminStats.activeSubscriptionPercentage}% operational status`
@@ -133,8 +133,8 @@ const AdminDashboard = ({ user }) => {
         <AdminStatCard
           title="Total Agents"
           value={adminStats?.totalAgents?.toString() || "0"}
-          icon={<FaRobot className="text-purple-600" />}
-          colorClass="bg-purple-50"
+          icon={<FaRobot className="text-purple-600 dark:text-purple-400" />}
+          colorClass="bg-purple-500/10 dark:bg-purple-500/20"
           desc={
             adminStats?.totalMessagesToday !== undefined
               ? `${adminStats.totalMessagesToday.toLocaleString("id-ID")} pesan hari ini`
@@ -151,18 +151,18 @@ const AdminDashboard = ({ user }) => {
       />
 
       {/* Activity Chart */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--color-text)] mb-1">
               Aktivitas Sistem
             </h3>
-            <p className="text-sm text-gray-500">Statistik 7 hari terakhir</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Statistik 7 hari terakhir</p>
           </div>
           {adminStats?.dailyStats && (
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-[var(--color-text-muted)]">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#1C4D8D]"></div>
+                <div className="w-3 h-3 rounded-full bg-[var(--color-primary)]"></div>
                 <span>Pesan</span>
               </div>
               <div className="flex items-center gap-2">
@@ -179,8 +179,8 @@ const AdminDashboard = ({ user }) => {
 
         {isAdminLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <FaSpinner className="animate-spin text-gray-400 text-3xl mb-4" />
-            <p className="text-gray-500">Memuat data chart...</p>
+            <FaSpinner className="animate-spin text-[var(--color-text-muted)] text-3xl mb-4" />
+            <p className="text-[var(--color-text-muted)]">Memuat data chart...</p>
           </div>
         ) : adminStats?.dailyStats &&
           adminStats.dailyStats.some(
@@ -297,11 +297,11 @@ const AdminDashboard = ({ user }) => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="bg-gray-50 p-4 rounded-full mb-4">
-              <FaChartLine size={32} className="text-gray-300" />
+            <div className="bg-[var(--color-border)] p-4 rounded-full mb-4">
+              <FaChartLine size={32} className="text-[var(--color-text-muted)]" />
             </div>
-            <h3 className="font-bold text-gray-400 mb-2">Belum Ada Data</h3>
-            <p className="text-sm text-gray-400 max-w-md">
+            <h3 className="font-bold text-[var(--color-text-muted)] mb-2">Belum Ada Data</h3>
+            <p className="text-sm text-[var(--color-text-muted)] max-w-md">
               Grafik aktivitas sistem akan muncul di sini setelah ada aktivitas dari customer.
             </p>
           </div>
@@ -458,16 +458,16 @@ const CustomerDashboard = ({ user }) => {
       />
 
       {/* Welcome Section */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm">
+      <div className="bg-[var(--color-surface)] rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Halo, {user?.name} 👋</h1>
-            <p className="text-gray-500 mb-6">
+            <h1 className="text-2xl font-bold text-[var(--color-text)] mb-2">Halo, {user?.name} 👋</h1>
+            <p className="text-[var(--color-text-muted)] mb-6">
               AI Agent Anda siap melayani pelanggan. Cek performa chatbot Anda hari ini.
             </p>
             <Link
               to="/ai-agents/create"
-              className="btn bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none rounded-xl normal-case px-6 shadow-lg shadow-blue-900/10"
+              className="btn bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none rounded-xl normal-case px-6 shadow-lg"
             >
               Buat Agent Baru <FaArrowRight className="ml-2" />
             </Link>
@@ -477,15 +477,15 @@ const CustomerDashboard = ({ user }) => {
         {/* Status & Subscription Cards - Improved Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
           {/* Status Koneksi */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 sm:p-6 flex flex-col justify-between border border-blue-200 shadow-sm hover:shadow-md transition-shadow min-h-[140px]">
+          <div className="bg-[var(--color-surface)] rounded-2xl p-5 sm:p-6 flex flex-col justify-between border border-[var(--color-border)] shadow-sm hover:shadow-md transition-shadow min-h-[140px]">
             <div className="mb-4">
-              <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                <FaWhatsapp className="text-blue-600" />
+              <div className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-3 flex items-center gap-2">
+                <FaWhatsapp className="text-[var(--color-primary)]" />
                 Status Koneksi
               </div>
               <div
                 className={`font-bold text-xl sm:text-2xl flex items-center gap-2 mb-2 ${
-                  stats?.hasWorkingPlatform ? "text-green-600" : "text-gray-500"
+                  stats?.hasWorkingPlatform ? "text-[var(--color-secondary)]" : "text-[var(--color-text-muted)]"
                 }`}
               >
                 {stats?.hasWorkingPlatform ? (
@@ -502,7 +502,7 @@ const CustomerDashboard = ({ user }) => {
               </div>
             </div>
             {stats?.totalPlatforms > 0 && (
-              <div className="text-xs text-gray-600 font-medium pt-3 border-t border-blue-200/50">
+              <div className="text-xs text-[var(--color-text-muted)] font-medium pt-3 border-t border-[var(--color-border)]">
                 {stats.connectedPlatforms} dari {stats.totalPlatforms} platform aktif
               </div>
             )}
@@ -654,20 +654,20 @@ const CustomerDashboard = ({ user }) => {
       </div>
 
       {/* Conversation Statistics Chart */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-6 sm:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--color-text)] mb-1">
               Statistik Percakapan
             </h3>
-            <p className="text-sm text-gray-500">Aktivitas chatbot 7 hari terakhir</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Aktivitas chatbot 7 hari terakhir</p>
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <FaSpinner className="animate-spin text-gray-400 text-3xl mb-4" />
-            <p className="text-gray-500">Memuat data...</p>
+            <FaSpinner className="animate-spin text-[var(--color-text-muted)] text-3xl mb-4" />
+            <p className="text-[var(--color-text-muted)]">Memuat data...</p>
           </div>
         ) : hasData && chartData ? (
           <div className="h-64 sm:h-80">
@@ -675,11 +675,11 @@ const CustomerDashboard = ({ user }) => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="bg-gray-50 p-4 rounded-full mb-4">
-              <FaChartLine size={32} className="text-gray-300" />
+            <div className="bg-[var(--color-border)] p-4 rounded-full mb-4">
+              <FaChartLine size={32} className="text-[var(--color-text-muted)]" />
             </div>
-            <h3 className="font-bold text-gray-400 mb-2">Belum Ada Data</h3>
-            <p className="text-sm text-gray-400 max-w-md">
+            <h3 className="font-bold text-[var(--color-text-muted)] mb-2">Belum Ada Data</h3>
+            <p className="text-sm text-[var(--color-text-muted)] max-w-md">
               Grafik aktivitas chatbot akan muncul di sini setelah ada interaksi dengan pelanggan.
             </p>
           </div>

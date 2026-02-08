@@ -15,13 +15,13 @@ const TableSearch = ({ onSearch, placeholder = "Cari data..." }) => {
 
   return (
     <div className="flex-1 relative">
-      <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+      <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--color-text-muted)]">
         <FaSearch />
       </div>
       <input
         type="text"
         placeholder={placeholder}
-        className="input input-bordered w-full pl-10 rounded-xl bg-gray-50 focus:bg-white border-gray-200 focus:border-[#1C4D8D] transition-all"
+        className="input input-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] focus:bg-[var(--color-bg)] border-[var(--color-border)] focus:border-[var(--color-primary)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] transition-all"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />

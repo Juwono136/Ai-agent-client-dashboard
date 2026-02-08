@@ -1,5 +1,19 @@
 import { useState, useEffect } from "react";
 import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink } from "react-icons/fa";
+import toast from "react-hot-toast";
+
+/** Validasi bahwa value adalah URL yang valid (harus http/https) */
+const isValidWebhookUrl = (value) => {
+  if (!value || typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -42,21 +56,34 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isLoading) return;
+
+    // Saat tambah user baru dengan role customer, URL webhook n8n wajib dan harus berupa URL valid
+    if (!initialData && formData.role === "customer") {
+      const url = (formData.n8nWebhookUrl || "").trim();
+      if (!url) {
+        toast.error("URL Webhook n8n wajib diisi untuk customer baru.");
+        return;
+      }
+      if (!isValidWebhookUrl(url)) {
+        toast.error("URL Webhook n8n harus berupa link URL yang valid (contoh: https://...).");
+        return;
+      }
+    }
+
     onSubmit(formData);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.3s_ease-out]">
-        {/* Header */}
-        <div className="bg-[#1C4D8D] px-6 py-4 flex justify-between items-center text-white">
+      <div className="bg-[var(--color-bg)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.3s_ease-out] border border-[var(--color-border)]">
+        <div className="bg-[var(--color-primary)] px-6 py-4 flex justify-between items-center text-white">
           <h3 className="font-bold text-lg">
             {initialData ? "Edit User" : "Tambah Customer Baru"}
           </h3>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="hover:text-gray-300 disabled:opacity-50"
+            className="hover:text-white/80 disabled:opacity-50"
           >
             <FaTimes />
           </button>
@@ -67,16 +94,16 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           <fieldset disabled={isLoading} className="space-y-4">
             {/* Nama */}
             <div className="form-control">
-              <label className="label text-xs font-bold text-gray-500 uppercase">
+              <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                 Nama Lengkap
               </label>
               <div className="relative">
-                <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
                   <FaUser />
                 </div>
                 <input
                   type="text"
-                  className="input input-bordered w-full pl-10 rounded-xl"
+                  className="input input-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)]"
                   placeholder="Contoh: Budi Santoso"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -87,16 +114,16 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
 
             {/* Email */}
             <div className="form-control">
-              <label className="label text-xs font-bold text-gray-500 uppercase">
+              <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
                   <FaEnvelope />
                 </div>
                 <input
                   type="email"
-                  className="input input-bordered w-full pl-10 rounded-xl"
+                  className="input input-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)]"
                   placeholder="email@company.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -105,7 +132,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                 />
               </div>
               {!initialData && (
-                <span className="text-[10px] text-gray-400 mt-1">
+                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   *Password sementara akan dikirim ke email ini.
                 </span>
               )}
@@ -114,13 +141,13 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
             {/* Role & Status */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="form-control">
-                <label className="label text-xs font-bold text-gray-500 uppercase">Role</label>
+                <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">Role</label>
                 <div className="relative">
-                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
                     <FaUserTag />
                   </div>
                   <select
-                    className="select select-bordered w-full pl-10 rounded-xl"
+                    className="select select-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]"
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
@@ -132,11 +159,11 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
 
               {initialData && (
                 <div className="form-control">
-                  <label className="label text-xs font-bold text-gray-500 uppercase">
+                  <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                     Status Akun
                   </label>
                   <select
-                    className={`select select-bordered w-full rounded-xl font-bold ${
+                    className={`select select-bordered w-full rounded-xl font-bold bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] ${
                       formData.isActive ? "text-green-600" : "text-red-500"
                     }`}
                     value={formData.isActive}
@@ -157,15 +184,15 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
             {/* Subscription Validity - Only for Customer */}
             {formData.role === "customer" && (
               <div className="form-control">
-                <label className="label text-xs font-bold text-gray-500 uppercase">
+                <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                   Masa Berlaku Langganan
                 </label>
                 <div className="relative">
-                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
                     <FaCalendarAlt />
                   </div>
                   <select
-                    className="select select-bordered w-full pl-10 rounded-xl"
+                    className="select select-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]"
                     value={formData.subscriptionMonths}
                     onChange={(e) =>
                       setFormData({ ...formData, subscriptionMonths: e.target.value })
@@ -185,7 +212,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                     ))}
                   </select>
                 </div>
-                <span className="text-[10px] text-gray-400 mt-1">
+                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   *Pilih durasi langganan (1-12 bulan)
                 </span>
               </div>
@@ -194,35 +221,38 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
             {/* n8n Webhook URL - Only for Customer */}
             {formData.role === "customer" && (
               <div className="form-control">
-                <label className="label text-xs font-bold text-gray-500 uppercase">
-                  URL Webhook n8n
+                <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
+                  URL Webhook n8n <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
                     <FaLink />
                   </div>
                   <input
                     type="url"
-                    className="input input-bordered w-full pl-10 rounded-xl"
+                    className="input input-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)]"
                     placeholder="https://n8n.example.com/webhook/..."
                     value={formData.n8nWebhookUrl}
                     onChange={(e) => setFormData({ ...formData, n8nWebhookUrl: e.target.value })}
+                    required={!initialData && formData.role === "customer"}
+                    pattern="https?://.+"
+                    title="Masukkan URL yang valid (contoh: https://n8n.example.com/webhook/...)"
                   />
                 </div>
-                <span className="text-[10px] text-gray-400 mt-1">
-                  *URL webhook n8n untuk menghubungkan workflow dengan sistem
+                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                  *Wajib diisi. Harus berupa link URL (http atau https) untuk webhook n8n.
                 </span>
               </div>
             )}
           </fieldset>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100">
+          <div className="flex gap-3 pt-4 mt-2 border-t border-[var(--color-border)]">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="btn flex-1 bg-white border-gray-300 text-gray-600 hover:bg-gray-50 normal-case disabled:opacity-50"
+              className="btn flex-1 bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] normal-case disabled:opacity-50"
             >
               Batal
             </button>
@@ -230,7 +260,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
             <button
               type="submit"
               disabled={isLoading}
-              className="btn flex-1 bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none normal-case disabled:opacity-80"
+              className="btn flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none normal-case disabled:opacity-80"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

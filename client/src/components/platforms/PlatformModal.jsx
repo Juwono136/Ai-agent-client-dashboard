@@ -150,30 +150,27 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
          Step 2 (QR): Ukuran besar/Full agar QR jelas.
       */}
       <div
-        className={`bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${step === 2 ? "w-full max-w-4xl h-[90vh]" : "w-full max-w-lg"}`}
+        className={`bg-[var(--color-bg)] rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 border border-[var(--color-border)] ${step === 2 ? "w-full max-w-4xl h-[90vh]" : "w-full max-w-lg"}`}
       >
-        {/* HEADER */}
-        <div className="bg-white px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <div className="bg-[var(--color-surface)] px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center">
           <div>
-            <h3 className="font-bold text-lg text-gray-800">
+            <h3 className="font-bold text-lg text-[var(--color-text)]">
               {step === 1 ? (initialData ? "Edit Connection" : "Setup WhatsApp") : "Scan QR Code"}
             </h3>
           </div>
-          <button onClick={onClose} className="btn btn-circle btn-sm btn-ghost text-gray-500">
+          <button onClick={onClose} className="btn btn-circle btn-sm btn-ghost text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
             <FaTimes size={18} />
           </button>
         </div>
 
-        {/* BODY */}
-        <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 relative">
-          {/* --- STEP 1: FORM INPUT --- */}
+        <div className="flex-1 overflow-y-auto bg-[var(--color-surface)]/50 p-6 relative">
           {step === 1 && (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="form-control">
-                <label className="label font-semibold text-gray-700">Nama Label</label>
+                <label className="label font-semibold text-[var(--color-text)]">Nama Label</label>
                 <input
                   type="text"
-                  className="input input-bordered w-full rounded-xl focus:outline-none focus:border-[#1C4D8D]"
+                  className="input input-bordered w-full rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]"
                   placeholder="Contoh: CS Sales 01"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -182,10 +179,10 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
               </div>
 
               <div className="form-control">
-                <label className="label font-semibold text-gray-700">Hubungkan ke AI Agent</label>
+                <label className="label font-semibold text-[var(--color-text)]">Hubungkan ke AI Agent</label>
                 <div className="relative">
                   <select
-                    className="select select-bordered w-full rounded-xl pl-10 focus:outline-none focus:border-[#1C4D8D]"
+                    className="select select-bordered w-full rounded-xl pl-10 bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)]"
                     value={formData.agentId}
                     onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
                     required
@@ -199,7 +196,7 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
                       </option>
                     ))}
                   </select>
-                  <FaRobot className="absolute left-3 top-3.5 text-gray-400" />
+                  <FaRobot className="absolute left-3 top-3.5 text-[var(--color-text-muted)]" />
                 </div>
               </div>
 
@@ -207,13 +204,13 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn btn-ghost text-gray-500 rounded-xl"
+                  className="btn btn-ghost text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded-xl"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="btn bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none rounded-xl px-8"
+                  className="btn bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none rounded-xl px-8"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? <span className="loading loading-dots"></span> : "Lanjut"}
@@ -230,14 +227,12 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
                   <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <FaCheckCircle className="text-6xl" />
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-800">Connected!</h2>
-                  <p className="text-gray-500 mt-2">WhatsApp berhasil terhubung.</p>
+                  <h2 className="text-3xl font-bold text-[var(--color-text)]">Connected!</h2>
+                  <p className="text-[var(--color-text-muted)] mt-2">WhatsApp berhasil terhubung.</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center w-full h-full space-y-6">
-                  {/* QR CONTAINER - Dibuat besar dan responsif */}
-
-                  <div className="relative bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center justify-center min-h-75 min-w-75">
+                  <div className="relative bg-[var(--color-surface)] p-4 rounded-xl shadow-sm border border-[var(--color-border)] flex items-center justify-center min-h-75 min-w-75">
                     {!qrLoading && currentQrCode ? (
                       <img
                         src={currentQrCode}
@@ -246,25 +241,23 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
                         style={{ imageRendering: "pixelated" }}
                       />
                     ) : (
-                      // LOADING STATE (Spinner Besar)
                       <div className="flex flex-col items-center justify-center gap-4">
-                        <span className="loading loading-spinner loading-lg text-[#1C4D8D] scale-150"></span>
-                        <p className="text-sm text-gray-400 mt-2">Mohon tunggu...</p>
+                        <span className="loading loading-spinner loading-lg text-[var(--color-primary)] scale-150"></span>
+                        <p className="text-sm text-[var(--color-text-muted)] mt-2">Mohon tunggu...</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Button Refresh */}
                   <button
                     onClick={handleRefreshQR}
-                    disabled={qrLoading} // Disable kalau lagi loading biar ga spam
-                    className="btn btn-outline border-gray-300 hover:bg-gray-100 text-gray-700 gap-2 rounded-xl px-6"
+                    disabled={qrLoading}
+                    className="btn btn-outline border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] gap-2 rounded-xl px-6"
                   >
                     <FaSync className={qrLoading ? "animate-spin" : ""} />
                     {qrLoading ? "Memuat..." : "Refresh QR Code"}
                   </button>
 
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-[var(--color-text-muted)]">
                     Buka WhatsApp di HP {">"} Pengaturan {">"} Klik Ikon QR Code pada Profile {">"} Scan QR Code diatas
                   </p>
                 </div>

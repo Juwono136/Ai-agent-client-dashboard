@@ -1,100 +1,72 @@
 import { Link, useLocation, useParams } from "react-router-dom";
-import { FaHome } from "react-icons/fa";
+import { FaHome, FaChevronRight } from "react-icons/fa";
 
 const Breadcrumbs = () => {
   const location = useLocation();
   const params = useParams();
 
-  // Handle special routes
   const getBreadcrumbPath = () => {
     const path = location.pathname;
 
-    // Dashboard only
-    if (path === "/dashboard") {
-      return [{ label: "Home", path: null }];
+    if (path === "/dashboard") return [{ label: "Dashboard", path: null }];
+    if (path === "/change-password") {
+      return [{ label: "Dashboard", path: "/dashboard" }, { label: "Ubah Password", path: null }];
     }
-
-    // AI Agents routes
     if (path.startsWith("/ai-agents")) {
-      const breadcrumbs = [
-        { label: "Home", path: "/dashboard" },
+      const items = [
+        { label: "Dashboard", path: "/dashboard" },
         { label: "AI Agents", path: "/ai-agents" },
       ];
-
-      // Create new agent
-      if (path === "/ai-agents/create") {
-        breadcrumbs.push({ label: "Create Agent", path: null });
-        return breadcrumbs;
-      }
-
-      // Edit agent (has ID)
-      if (params.id) {
-        breadcrumbs.push({ label: "Edit Agent", path: null });
-        return breadcrumbs;
-      }
-
-      return breadcrumbs;
+      if (path === "/ai-agents/create") items.push({ label: "Buat Agent", path: null });
+      else if (params.id) items.push({ label: "Edit Agent", path: null });
+      return items;
     }
-
-    // Connected Platforms
     if (path.startsWith("/platforms")) {
-      return [
-        { label: "Home", path: "/dashboard" },
-        { label: "Connected Platforms", path: null },
-      ];
+      return [{ label: "Dashboard", path: "/dashboard" }, { label: "Connected Platforms", path: null }];
     }
-
-    // Users (admin only)
     if (path.startsWith("/users")) {
-      return [
-        { label: "Home", path: "/dashboard" },
-        { label: "Users", path: null },
-      ];
+      return [{ label: "Dashboard", path: "/dashboard" }, { label: "User Management", path: null }];
     }
 
-    // Default: parse pathname
     const pathnames = path.split("/").filter((x) => x && x !== "dashboard");
-    const breadcrumbs = [{ label: "Home", path: "/dashboard" }];
-
-    pathnames.forEach((name, index) => {
-      const routeTo = `/dashboard/${pathnames.slice(0, index + 1).join("/")}`;
-      const isLast = index === pathnames.length - 1;
-      const formattedName = name.replace(/-/g, " ");
-
-      breadcrumbs.push({
-        label: formattedName,
-        path: isLast ? null : routeTo,
+    const items = [{ label: "Dashboard", path: "/dashboard" }];
+    pathnames.forEach((name, i) => {
+      items.push({
+        label: name.replace(/-/g, " "),
+        path: i === pathnames.length - 1 ? null : `/dashboard/${pathnames.slice(0, i + 1).join("/")}`,
       });
     });
-
-    return breadcrumbs;
+    return items;
   };
 
-  const breadcrumbs = getBreadcrumbPath();
+  const items = getBreadcrumbPath();
 
   return (
-    <div className="text-sm breadcrumbs text-gray-500 mb-1 hidden md:block">
-      <ul>
-        {breadcrumbs.map((crumb, index) => (
-          <li key={index}>
+    <nav aria-label="Breadcrumb" className="min-w-0 hidden sm:block">
+      <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+        {items.map((crumb, i) => (
+          <li key={i} className="flex items-center gap-1.5 min-w-0">
+            {i > 0 && (
+              <FaChevronRight className="flex-shrink-0 w-3 h-3 text-[var(--color-text-muted)]/70" aria-hidden />
+            )}
             {crumb.path ? (
               <Link
                 to={crumb.path}
-                className="flex items-center gap-2 hover:text-[#1C4D8D] transition-colors capitalize"
+                className="truncate flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
               >
-                {index === 0 && <FaHome />}
+                {i === 0 ? <FaHome className="inline w-3.5 h-3.5 mr-1 align-middle" /> : null}
                 {crumb.label}
               </Link>
             ) : (
-              <span className="flex items-center gap-2 text-[#1C4D8D] font-semibold cursor-default capitalize">
-                {index === 0 && <FaHome />}
+              <span className="truncate flex items-center text-[var(--color-text)] font-medium" aria-current="page">
+                {i === 0 ? <FaHome className="inline w-3.5 h-3.5 mr-1 align-middle" /> : null}
                 {crumb.label}
               </span>
             )}
           </li>
         ))}
-      </ul>
-    </div>
+      </ol>
+    </nav>
   );
 };
 

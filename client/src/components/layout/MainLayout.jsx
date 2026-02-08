@@ -28,7 +28,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--color-bg)] font-sans overflow-x-hidden transition-colors">
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -48,15 +48,7 @@ const MainLayout = () => {
         <Header toggleSidebar={toggleSidebar} onLogout={() => setIsLogoutModalOpen(true)} />
 
         {/* Page Content */}
-        <main
-          className="
-            flex-1
-            px-4 py-6
-            sm:px-6
-            lg:px-8
-            overflow-y-auto
-          "
-        >
+        <main className="flex-1 px-4 pt-6 pb-21 sm:px-6 lg:px-8 overflow-y-auto bg-[var(--color-bg)]">
           {/* CONTAINER */}
           <div className="max-w-7xl mx-auto w-full">
             <Outlet />

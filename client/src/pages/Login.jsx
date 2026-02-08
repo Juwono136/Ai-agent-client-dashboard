@@ -55,10 +55,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white overflow-hidden font-sans">
+    <div className="min-h-screen flex bg-[var(--color-bg)] overflow-hidden font-sans">
       {/* --- KIRI: Branding (Desktop) --- */}
       <div
-        className={`hidden lg:flex w-5/12 bg-[#1C4D8D] relative flex-col justify-between p-12 text-white transition-all duration-1000 ease-out transform ${isVisible ? "translate-x-0 opacity-100" : "-translate-x-10 opacity-0"}`}
+        className={`hidden lg:flex w-5/12 bg-[var(--color-primary)] relative flex-col justify-between p-12 text-white transition-all duration-1000 ease-out transform ${isVisible ? "translate-x-0 opacity-100" : "-translate-x-10 opacity-0"}`}
       >
         {/* Abstract Shapes (Tailwind only) */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -68,7 +68,7 @@ const Login = () => {
 
         <div className="relative z-10">
           <h1 className="text-3xl font-extrabold tracking-wide flex items-center gap-2">
-            Cekat<span className="text-[#BDE8F5]">.ai</span>
+            Sapaku<span className="text-[#BDE8F5]">.ai</span>
           </h1>
         </div>
 
@@ -83,35 +83,34 @@ const Login = () => {
         </div>
 
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Cekat.ai Technology.
+          © {new Date().getFullYear()} Sapaku.ai Technology.
         </div>
       </div>
 
       {/* --- KANAN: Login Form --- */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 bg-gray-50/50">
+      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 bg-[var(--color-surface)]">
         <div
-          className={`w-full max-w-md bg-white p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 transition-all duration-1000 delay-300 ease-out transform ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
+          className={`w-full max-w-md bg-[var(--color-bg)] p-8 md:p-10 rounded-3xl shadow-lg border border-[var(--color-border)] transition-all duration-1000 delay-300 ease-out transform ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
         >
-          {/* Header Mobile */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-[#1C4D8D]">
-              Cekat<span className="text-[#4988C4]">.ai</span>
+            <h1 className="text-3xl font-extrabold text-[var(--color-primary)]">
+              Sapaku<span className="opacity-80">.ai</span>
             </h1>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#1C4D8D]">Selamat Datang</h2>
-            <p className="text-gray-500 text-sm mt-2">Silakan masuk menggunakan akun terdaftar.</p>
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold text-[var(--color-primary)]">Selamat Datang</h2>
+            <p className="text-[var(--color-text-muted)] text-sm mt-2">Silakan masuk menggunakan akun terdaftar.</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
             {/* Input Email */}
             <div className="form-control">
-              <label className="label text-xs font-bold text-gray-500 uppercase">
+              <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                 Email Address
               </label>
               <div className="relative group">
-                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1C4D8D] transition-colors">
+                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
                   <FaEnvelope />
                 </div>
                 <input
@@ -120,18 +119,17 @@ const Login = () => {
                   value={email}
                   onChange={onChange}
                   placeholder="name@company.com"
-                  className="input input-bordered w-full pl-11 bg-gray-50 focus:bg-white focus:border-[#1C4D8D] focus:ring-2 focus:ring-[#1C4D8D]/20 rounded-xl transition-all h-12"
+                  className="input input-bordered w-full pl-11 bg-[var(--color-surface)] focus:bg-[var(--color-bg)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 rounded-xl transition-all h-12 border-[var(--color-border)] text-[var(--color-text)]"
                 />
               </div>
             </div>
 
-            {/* Input Password */}
             <div className="form-control">
               <label className="label flex justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase">Password</span>
+                <span className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Password</span>
               </label>
               <div className="relative group">
-                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1C4D8D] transition-colors">
+                <div className="absolute z-10 inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">
                   <FaLock />
                 </div>
                 <input
@@ -139,13 +137,13 @@ const Login = () => {
                   name="password"
                   value={password}
                   onChange={onChange}
-                  placeholder="••••••••"
-                  className="input input-bordered w-full pl-11 pr-12 bg-gray-50 focus:bg-white focus:border-[#1C4D8D] focus:ring-2 focus:ring-[#1C4D8D]/20 rounded-xl transition-all h-12"
+                  placeholder="**********"
+                  className="input input-bordered w-full pl-11 pr-12 bg-[var(--color-surface)] focus:bg-[var(--color-bg)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 rounded-xl transition-all h-12 border-[var(--color-border)] text-[var(--color-text)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#1C4D8D] cursor-pointer transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] cursor-pointer transition-colors"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
@@ -154,17 +152,16 @@ const Login = () => {
               <div className="flex w-full justify-end items-center mt-1.5">
                 <Link
                   to="/forgot-password"
-                  className="text-sm font-semibold text-[#4988C4] hover:text-[#1C4D8D] hover:underline transition-colors"
+                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline transition-colors"
                 >
                   Lupa Password?
                 </Link>
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
-              className="btn w-full bg-[#1C4D8D] hover:bg-[#153e75] text-white border-none shadow-lg shadow-[#1C4D8D]/30 normal-case text-lg font-bold h-12 rounded-xl mt-1 transition-transform active:scale-95"
+              className="btn w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-lg normal-case text-lg font-bold h-12 rounded-xl mt-1 transition-transform active:scale-95"
               disabled={isLoading}
             >
               {isLoading ? (

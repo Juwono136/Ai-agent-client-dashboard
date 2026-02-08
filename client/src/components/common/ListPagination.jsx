@@ -63,12 +63,12 @@ const ListPagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-2.5">
       {/* Info - Compact */}
-      <div className="text-xs text-gray-600">
-        Menampilkan <span className="font-semibold text-gray-700">{startItem}</span> -{" "}
-        <span className="font-semibold text-gray-700">{endItem}</span> dari{" "}
-        <span className="font-semibold text-gray-700">{totalItems}</span> {itemLabel}
+      <div className="text-xs text-[var(--color-text-muted)]">
+        Menampilkan <span className="font-semibold text-[var(--color-text)]">{startItem}</span> -{" "}
+        <span className="font-semibold text-[var(--color-text)]">{endItem}</span> dari{" "}
+        <span className="font-semibold text-[var(--color-text)]">{totalItems}</span> {itemLabel}
       </div>
 
       {/* Pagination Controls - Compact */}
@@ -77,10 +77,10 @@ const ListPagination = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading}
-          className="btn btn-xs btn-outline rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-xs btn-outline rounded-lg border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <FaSpinner className="animate-spin text-xs" />
+            <FaSpinner className="animate-spin text-xs text-[var(--color-primary)]" />
           ) : (
             <FaChevronLeft className="text-xs" />
           )}
@@ -91,7 +91,7 @@ const ListPagination = ({
           {pageNumbers.map((page, index) => {
             if (page === "ellipsis") {
               return (
-                <span key={`ellipsis-${index}`} className="px-1 text-gray-400 text-xs">
+                <span key={`ellipsis-${index}`} className="px-1 text-[var(--color-text-muted)] text-xs">
                   ...
                 </span>
               );
@@ -104,8 +104,8 @@ const ListPagination = ({
                 disabled={isLoading}
                 className={`btn btn-xs rounded-lg min-w-[2rem] h-8 ${
                   currentPage === page
-                    ? "bg-[#1C4D8D] text-white border-[#1C4D8D]"
-                    : "btn-outline hover:bg-gray-50"
+                    ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
+                    : "btn-outline border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {page}
@@ -118,10 +118,10 @@ const ListPagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || isLoading}
-          className="btn btn-xs btn-outline rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-xs btn-outline rounded-lg border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <FaSpinner className="animate-spin text-xs" />
+            <FaSpinner className="animate-spin text-xs text-[var(--color-primary)]" />
           ) : (
             <FaChevronRight className="text-xs" />
           )}
