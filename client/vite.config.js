@@ -9,9 +9,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/api": {
           target:
-            mode === "development"
-              ? "http://localhost:5000"
-              : "https://myjek-api.srv1213369.hstgr.cloud",
+            mode === "development" ? "http://localhost:5000" : "https://vlow-api.portproject.my.id",
           changeOrigin: true,
           secure: mode !== "development",
           ws: true,

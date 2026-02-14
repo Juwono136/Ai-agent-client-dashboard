@@ -105,6 +105,10 @@ jobs:
                   RATE_LIMIT_AUTH_MAX: ${{ secrets.RATE_LIMIT_AUTH_MAX }}
                   DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
                   SYNC_ALTER: ${{ secrets.SYNC_ALTER }}
+
+            - name: Run seed inside container
+              run: docker exec vlow-api npm run seed
+
             - name: Add Containers to Tunnel
               run: |
                   docker network connect ${{ secrets.TUNNEL_NAME }} vlow-api || true
