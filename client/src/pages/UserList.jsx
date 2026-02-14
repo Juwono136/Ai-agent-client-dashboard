@@ -203,19 +203,20 @@ const UserList = () => {
                     Masa Berlaku {getSortIcon("subscriptionExpiry")}
                   </div>
                 </th>
+                <th className="hidden sm:table-cell">Limit Platform</th>
                 <th className="text-center pr-6">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="py-12">
+                  <td colSpan="7" className="py-12">
                     <Loader type="block" text="Sedang memuat data users..." />
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-12 text-[var(--color-text-muted)] italic">
+                  <td colSpan="7" className="text-center py-12 text-[var(--color-text-muted)] italic">
                     Tidak ada data user yang ditemukan.
                   </td>
                 </tr>
@@ -276,6 +277,11 @@ const UserList = () => {
 
                             return (
                               <div className="flex flex-col gap-1">
+                                {user.isTrial && (
+                                  <span className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded w-fit">
+                                    Trial
+                                  </span>
+                                )}
                                 <div
                                   className={`text-xs font-semibold ${
                                     isExpired ? "text-red-600" : daysUntilExpiry <= 7 ? "text-yellow-600" : "text-green-600"
@@ -318,6 +324,15 @@ const UserList = () => {
                             <FaExclamationTriangle /> Belum Diaktifkan
                           </div>
                         )
+                      ) : (
+                        <span className="text-xs text-[var(--color-text-muted)] italic">-</span>
+                      )}
+                    </td>
+                    <td className="hidden sm:table-cell">
+                      {user.role === "customer" ? (
+                        <span className="text-xs font-semibold text-[var(--color-text)] bg-[var(--color-primary)]/10 px-2 py-1 rounded-lg">
+                          {user.platformSessionLimit ?? 5} koneksi
+                        </span>
                       ) : (
                         <span className="text-xs text-[var(--color-text-muted)] italic">-</span>
                       )}

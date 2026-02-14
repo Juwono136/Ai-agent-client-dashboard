@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FaHome, FaUsers, FaRobot, FaNetworkWired, FaTimes, FaSignOutAlt } from "react-icons/fa";
+import vlowLogo from "../../assets/vlow-logo.PNG";
 
 const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
   const { user } = useSelector((state) => state.auth);
@@ -31,9 +32,12 @@ const Sidebar = ({ isOpen, toggleSidebar, onLogoutClick }) => {
       >
         <div>
           <div className="h-20 flex items-center justify-between px-6 border-b border-white/10 bg-black/10">
-            <h1 className="text-2xl font-extrabold tracking-tight">
-              Sapaku<span className="text-[var(--sidebar-accent)]">.ai</span>
-            </h1>
+            <div className="flex items-center gap-2">
+              <img src={vlowLogo} alt="Vlow.ai" className="h-9 w-auto" />
+              <span className="text-2xl font-extrabold tracking-tight">
+                Vlow<span className="text-[var(--sidebar-accent)]">.ai</span>
+              </span>
+            </div>
             {/* Tombol Close di Mobile */}
             <button onClick={toggleSidebar} className="lg:hidden text-white/70 hover:text-white">
               <FaTimes size={20} />

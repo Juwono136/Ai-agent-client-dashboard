@@ -3,11 +3,13 @@ import KnowledgeSource from "../models/KnowledgeSource.js";
 import ConnectedPlatform from "../models/ConnectedPlatform.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import { isCustomerSubscriptionActive } from "../utils/subscriptionUtils.js";
 import minioClient, { bucketName } from "../config/minio.js";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { buildAgentSystemPrompt } from "../utils/handoff.js";
 import { Op } from "sequelize";
+import * as wahaService from "../services/wahaService.js";
 
 // --- HELPER: Upload to MinIO ---
 const uploadToMinio = async (file) => {
@@ -15,7 +17,7 @@ const uploadToMinio = async (file) => {
   await minioClient.putObject(bucketName, fileName, file.buffer);
 
   // Return Public URL (Sesuaikan dengan ENV Anda)
-  // Contoh: http://localhost:9000/sapaku-agents/gambar.jpg
+  // Contoh: http://localhost:9000/<bucket>/gambar.jpg
   const minioUrl =
     process.env.MINIO_PUBLIC_URL || `http://localhost:${process.env.MINIO_PORT || 9000}`;
   return `${minioUrl}/${bucketName}/${fileName}`;
@@ -25,7 +27,7 @@ const deleteFromMinio = async (imageUrl) => {
   if (!imageUrl) return;
   try {
     // Extract object name from URL
-    // URL format: http://localhost:9000/sapaku-agents/uuid-filename.jpg
+    // URL format: http://localhost:9000/<bucket>/uuid-filename.jpg
     const urlParts = imageUrl.split(`/${bucketName}/`);
     if (urlParts.length === 2) {
       const objectName = urlParts[1];
@@ -200,9 +202,15 @@ export const getMyAgents = async (req, res, next) => {
 
     const totalPages = Math.ceil(count / limitNum);
 
+    // Jika customer langganan habis: tampilkan semua agent sebagai non-aktif (tidak bisa dipakai)
+    const subscriptionActive = isCustomerSubscriptionActive(req.user);
+    const data = subscriptionActive
+      ? agents
+      : agents.map((a) => ({ ...a.toJSON(), isActive: false }));
+
     res.status(200).json({
       success: true,
-      data: agents,
+      data,
       pagination: {
         total: count,
         page: pageNum,
@@ -228,7 +236,12 @@ export const getAgentById = async (req, res, next) => {
 
     if (!agent) return next(new AppError("Agent tidak ditemukan.", 404));
 
-    res.status(200).json({ success: true, data: agent });
+    // Jika customer langganan habis: agent efektif non-aktif (tidak bisa dipakai)
+    const subscriptionActive = isCustomerSubscriptionActive(req.user);
+    const raw = agent.toJSON ? agent.toJSON() : agent;
+    const data = subscriptionActive ? raw : { ...raw, isActive: false };
+
+    res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -437,7 +450,7 @@ export const getIntegrationConfig = async (req, res, next) => {
     // Check subscription expiry for customer
     if (user && user.role === "customer") {
       if (!user.subscriptionExpiry) {
-        return res.json({
+        res.json({
           agentName: agent.name,
           systemInstruction:
             "SUBSCRIPTION_EXPIRED: Langganan belum diaktifkan. Jangan membalas pesan apapun. Output harus kosong.",
@@ -448,11 +461,13 @@ export const getIntegrationConfig = async (req, res, next) => {
           disabledReason: "Subscription not activated",
           followupConfig: { isEnabled: false },
         });
+        wahaService.stopWahaSession(platform.sessionId).catch(() => {});
+        return;
       }
 
       const expiryDate = new Date(user.subscriptionExpiry);
       if (expiryDate < new Date()) {
-        return res.json({
+        res.json({
           agentName: agent.name,
           systemInstruction:
             "SUBSCRIPTION_EXPIRED: Langganan telah berakhir. Jangan membalas pesan apapun. Output harus kosong.",
@@ -463,6 +478,8 @@ export const getIntegrationConfig = async (req, res, next) => {
           disabledReason: "Subscription expired",
           followupConfig: { isEnabled: false },
         });
+        wahaService.stopWahaSession(platform.sessionId).catch(() => {});
+        return;
       }
     }
 

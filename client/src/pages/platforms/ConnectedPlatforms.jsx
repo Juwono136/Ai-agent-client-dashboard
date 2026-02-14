@@ -36,6 +36,15 @@ const ConnectedPlatforms = () => {
     (state) => state.platforms,
   );
   const { agents } = useSelector((state) => state.agents);
+  const { user: authUser } = useSelector((state) => state.auth);
+
+  // Limit koneksi WhatsApp (diatur admin di User Management), default 5 untuk customer
+  const sessionLimit =
+    authUser?.role === "customer"
+      ? (authUser.platformSessionLimit ?? 5)
+      : null;
+  const currentCount = pagination?.total ?? platforms.length;
+  const isAtLimit = sessionLimit != null && currentCount >= sessionLimit;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
@@ -174,8 +183,16 @@ const ConnectedPlatforms = () => {
   const isInitialLoad = isLoading && platforms.length === 0;
   const isFiltering = isFilterLoading || (isLoading && platforms.length > 0);
 
-  // Helper untuk Status Badge
-  const getStatusBadge = (status) => {
+  // Helper untuk Status Badge (subscriptionSuspended = langganan habis, koneksi tidak bisa dipakai)
+  const getStatusBadge = (platform) => {
+    const status = platform?.status;
+    if (platform?.subscriptionSuspended) {
+      return (
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-100">
+          <FaExclamationTriangle /> Ditangguhkan (Langganan habis)
+        </div>
+      );
+    }
     switch (status) {
       case "WORKING":
         return (
@@ -196,7 +213,7 @@ const ConnectedPlatforms = () => {
       default:
         return (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-border)] text-[var(--color-text-muted)] text-xs font-bold border border-[var(--color-border)]">
-            <FaExclamationTriangle /> {status}
+            <FaExclamationTriangle /> {status || "—"}
           </div>
         );
     }
@@ -217,15 +234,42 @@ const ConnectedPlatforms = () => {
                 ({pagination.total} platform)
               </span>
             )}
+            {sessionLimit != null && (
+              <span className="ml-2 text-xs text-[var(--color-text-muted)]">
+                — Limit: {currentCount}/{sessionLimit} koneksi
+              </span>
+            )}
           </p>
         </div>
         <button
-          onClick={handleOpenCreate}
-          className="btn btn-sm bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-lg rounded-xl gap-2 px-4 h-9"
+          onClick={() => (isAtLimit ? toast.error(`Batas koneksi tercapai (${currentCount}/${sessionLimit}). Hubungi admin untuk menambah limit.`) : handleOpenCreate())}
+          disabled={isAtLimit}
+          className="btn btn-sm bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-lg rounded-xl gap-2 px-4 h-9 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <FaPlus size={14} /> Tambah Nomor
         </button>
       </div>
+
+      {/* Limit info banner untuk customer */}
+      {sessionLimit != null && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            isAtLimit
+              ? "bg-amber-50 border-amber-200 text-amber-800"
+              : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]"
+          }`}
+        >
+          {isAtLimit ? (
+            <span className="font-medium">
+              Anda telah mencapai batas koneksi WhatsApp ({currentCount}/{sessionLimit}). Hubungi administrator untuk menambah limit.
+            </span>
+          ) : (
+            <span>
+              Batas koneksi: {currentCount}/{sessionLimit} — Anda dapat menambah hingga {sessionLimit} nomor WhatsApp.
+            </span>
+          )}
+        </div>
+      )}
 
       {/* FILTERS - Professional Design */}
       <PlatformListFilters
@@ -267,8 +311,9 @@ const ConnectedPlatforms = () => {
           </p>
           {(!searchQuery && statusFilter === "all") && (
             <button
-              onClick={handleOpenCreate}
-              className="mt-6 btn btn-outline border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)]/30 rounded-xl px-8"
+              onClick={() => (isAtLimit ? toast.error(`Batas koneksi tercapai (${currentCount}/${sessionLimit}). Hubungi admin untuk menambah limit.`) : handleOpenCreate())}
+              disabled={isAtLimit}
+              className="mt-6 btn btn-outline border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)]/30 rounded-xl px-8 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Mulai Koneksi
             </button>
@@ -285,19 +330,19 @@ const ConnectedPlatforms = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
-                        pf.status === "WORKING"
+<div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                        pf.status === "WORKING" && !pf.subscriptionSuspended
                           ? "bg-gradient-to-br from-green-400 to-green-600 text-white"
                           : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
                       }`}
-                    >
-                      <FaWhatsapp size={28} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[var(--color-text)] truncate max-w-[150px]">{pf.name}</h3>
-                      <div className="mt-1">{getStatusBadge(pf.status)}</div>
-                    </div>
+                  >
+                    <FaWhatsapp size={28} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[var(--color-text)] truncate max-w-[150px]">{pf.name}</h3>
+                    <div className="mt-1">{getStatusBadge(pf)}</div>
+                  </div>
                   </div>
 
                   {/* Actions Dropdown */}

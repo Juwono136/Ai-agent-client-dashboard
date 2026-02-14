@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import Quill from "quill";
+import toast from "react-hot-toast";
 import "quill/dist/quill.snow.css";
+
+const IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+const IMAGE_ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
 const RichTextEditor = ({ value, onChange, placeholder }) => {
   const editorRef = useRef(null);
@@ -37,16 +41,25 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
 
     // --- LOGIC: Custom Image Handler ---
     function imageHandler() {
-      // Buat elemen input file secara dinamis
       const input = document.createElement("input");
       input.setAttribute("type", "file");
-      input.setAttribute("accept", "image/*");
+      input.setAttribute("accept", ".jpg,.jpeg,.png,image/jpeg,image/png");
       input.click();
 
-      // Opsi 1: Upload dari Komputer
       input.onchange = () => {
         const file = input.files[0];
         if (!file) return;
+
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+        const allowedExt = ["jpg", "jpeg", "png"];
+        if (!allowedExt.includes(ext) || !IMAGE_ALLOWED_TYPES.includes(file.type)) {
+          toast.error("Hanya file gambar JPG, JPEG, atau PNG yang diizinkan.");
+          return;
+        }
+        if (file.size > IMAGE_MAX_SIZE_BYTES) {
+          toast.error("Ukuran gambar maksimal 2MB.");
+          return;
+        }
 
         const MAX_WIDTH = 1024;
         const MAX_HEIGHT = 1024;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink } from "react-icons/fa";
+import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink, FaPlug } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 /** Validasi bahwa value adalah URL yang valid (harus http/https) */
@@ -23,6 +23,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
     isActive: true,
     subscriptionMonths: "",
     n8nWebhookUrl: "",
+    platformSessionLimit: 5,
   });
 
   useEffect(() => {
@@ -37,6 +38,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           isActive: initialData.isActive,
           subscriptionMonths: "", // Empty for edit - admin will set extension months
           n8nWebhookUrl: initialData.n8nWebhookUrl || "",
+          platformSessionLimit: initialData.platformSessionLimit ?? 5,
         });
       } else {
         setFormData({
@@ -46,6 +48,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           isActive: true,
           subscriptionMonths: "",
           n8nWebhookUrl: "",
+          platformSessionLimit: 5,
         });
       }
     }
@@ -74,23 +77,26 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[var(--color-bg)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.3s_ease-out] border border-[var(--color-border)]">
-        <div className="bg-[var(--color-primary)] px-6 py-4 flex justify-between items-center text-white">
-          <h3 className="font-bold text-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 md:p-6">
+      <div className="bg-[var(--color-bg)] rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] sm:max-h-[90vh] flex flex-col animate-[fadeIn_0.3s_ease-out] border border-[var(--color-border)] overflow-hidden">
+        {/* Header - Fixed */}
+        <div className="bg-[var(--color-primary)] px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center text-white flex-shrink-0">
+          <h3 className="font-bold text-base sm:text-lg">
             {initialData ? "Edit User" : "Tambah Customer Baru"}
           </h3>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="hover:text-white/80 disabled:opacity-50"
+            className="hover:text-white/80 disabled:opacity-50 transition-colors p-1"
+            aria-label="Tutup modal"
           >
             <FaTimes />
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Body - Scrollable */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
+          <div className="space-y-4 pb-1">
           <fieldset disabled={isLoading} className="space-y-4">
             {/* Nama */}
             <div className="form-control">
@@ -200,6 +206,9 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                     required={formData.role === "customer"}
                   >
                     <option value="">Pilih Masa Berlaku</option>
+                    <option value="trial" className="text-[var(--color-primary)] font-semibold">
+                      Uji Coba 7 Hari (Trial)
+                    </option>
                     {/* TESTING OPTION: Opsi 1 hari untuk testing - HAPUS atau KOMENTARI setelah testing selesai */}
                     <option value="0" className="text-orange-600 font-bold">
                       1 Hari (Testing)
@@ -213,7 +222,40 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                   </select>
                 </div>
                 <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                  *Pilih durasi langganan (1-12 bulan)
+                  *Uji coba 7 hari atau pilih durasi langganan (1-12 bulan)
+                </span>
+              </div>
+            )}
+
+            {/* Limit Koneksi Platform (WhatsApp) - Only for Customer */}
+            {formData.role === "customer" && (
+              <div className="form-control">
+                <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
+                  Limit Koneksi WhatsApp
+                </label>
+                <div className="relative">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
+                    <FaPlug />
+                  </div>
+                  <select
+                    className="select select-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]"
+                    value={formData.platformSessionLimit}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        platformSessionLimit: parseInt(e.target.value, 10),
+                      })
+                    }
+                  >
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? "session" : "sessions"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                  *Maksimal jumlah koneksi WhatsApp (Connected Platform) yang boleh dibuat customer.
                 </span>
               </div>
             )}
@@ -245,14 +287,15 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
               </div>
             )}
           </fieldset>
+          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 mt-2 border-t border-[var(--color-border)]">
+          {/* Actions - At bottom of form */}
+          <div className="flex gap-3 pt-4 mt-4 border-t border-[var(--color-border)]">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="btn flex-1 bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] normal-case disabled:opacity-50"
+              className="btn flex-1 bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] normal-case disabled:opacity-50 text-sm sm:text-base"
             >
               Batal
             </button>
@@ -260,7 +303,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
             <button
               type="submit"
               disabled={isLoading}
-              className="btn flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none normal-case disabled:opacity-80"
+              className="btn flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none normal-case disabled:opacity-80 text-sm sm:text-base"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

@@ -45,8 +45,15 @@ const ConversationLog = sequelize.define("ConversationLog", {
   },
   metadata: {
     type: DataTypes.JSONB,
-    allowNull: true, // Untuk data tambahan seperti booking, escalate reason, dll
+    allowNull: true,
   },
+}, {
+  indexes: [
+    { fields: ["agentId"] },
+    { fields: ["createdAt"] },
+    { fields: ["agentId", "createdAt"] },
+    { fields: ["agentId", "mode", "createdAt"] },
+  ],
 });
 
 export default ConversationLog;

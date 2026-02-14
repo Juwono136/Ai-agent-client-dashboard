@@ -59,6 +59,12 @@ const Agent = sequelize.define("Agent", {
     type: DataTypes.UUID,
     allowNull: false,
   },
+}, {
+  indexes: [
+    { fields: ["userId"] },
+    { fields: ["updatedAt"] },
+    { fields: ["userId", "updatedAt"] },
+  ],
 });
 
 export default Agent;

@@ -37,16 +37,16 @@ export const getAgentAnalytics = async (req, res, next) => {
         break;
     }
 
-    // 3. Get conversation logs
+    // 3. Get conversation logs (dibatasi agar performa tetap baik saat data besar)
+    const ANALYTICS_LOGS_LIMIT = 10000;
     const logs = await ConversationLog.findAll({
       where: {
         agentId: id,
-        mode: "production", // Hanya production, exclude simulator
-        createdAt: {
-          [Op.gte]: startDate,
-        },
+        mode: "production",
+        createdAt: { [Op.gte]: startDate },
       },
       order: [["createdAt", "DESC"]],
+      limit: ANALYTICS_LOGS_LIMIT,
     });
 
     // 4. Calculate metrics

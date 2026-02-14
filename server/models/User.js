@@ -38,6 +38,18 @@ const User = sequelize.define(
       allowNull: true,
       comment: "Tanggal berakhirnya langganan (hanya untuk customer)",
     },
+    isTrial: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      comment: "True jika customer dalam masa uji coba 7 hari",
+    },
+    platformSessionLimit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 5,
+      validate: { min: 1, max: 10 },
+      comment: "Maksimal jumlah koneksi WhatsApp (Connected Platform) untuk customer (1-10)",
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -56,6 +68,11 @@ const User = sequelize.define(
     },
   },
   {
+    indexes: [
+      { fields: ["email"] },
+      { fields: ["role"] },
+      { fields: ["subscriptionExpiry"] },
+    ],
     hooks: {
       beforeCreate: async (user) => {
         if (user.password) {

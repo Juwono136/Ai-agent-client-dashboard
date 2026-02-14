@@ -29,19 +29,21 @@ import {
 // --- SETUP MULTER (Security & Config) ---
 const storage = multer.memoryStorage(); // Simpan di RAM agar cepat diproses ke MinIO
 
+const ALLOWED_IMAGE_MIMETYPES = ["image/jpeg", "image/jpg", "image/png"];
+const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+
 const fileFilter = (req, file, cb) => {
-  // Hanya izinkan file gambar
-  if (file.mimetype.startsWith("image/")) {
+  if (ALLOWED_IMAGE_MIMETYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError("Bukan gambar! Silakan upload file gambar saja.", 400), false);
+    cb(new AppError("Hanya file gambar JPG, JPEG, atau PNG yang diizinkan. Maks. 2MB.", 400), false);
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit 5MB per file
+  limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
 });
 
 const router = express.Router();

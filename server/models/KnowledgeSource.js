@@ -20,6 +20,8 @@ const KnowledgeSource = sequelize.define("KnowledgeSource", {
     type: DataTypes.UUID,
     allowNull: false,
   },
+}, {
+  indexes: [{ fields: ["agentId"] }],
 });
 
 export default KnowledgeSource;

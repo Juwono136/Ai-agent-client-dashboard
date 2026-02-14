@@ -3,13 +3,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import sequelize from "./config/database.js";
 import logger from "./utils/logger.js";
 import { initMinio } from "./config/minio.js";
 
-// Import Middleware Error Handler kita yang sudah canggih
 import errorHandler from "./middlewares/errorMiddleware.js";
+import { apiLimiter } from "./middlewares/rateLimitMiddleware.js";
 
 // Import Models/Routes
 import authRoutes from "./routes/authRoutes.js";
@@ -29,24 +30,29 @@ dotenv.config();
 
 const app = express();
 
-// --- Server Start & DB Connect ---
+// Trust proxy (satu hop) agar rate limit & IP benar saat di belakang Nginx/load balancer di VPS
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 const PORT = process.env.PORT || 5000;
 
 // --- Middlewares Global ---
 app.use(helmet());
-
-// UPDATE CORS: Agar Cookie bisa dikirim dari Frontend (Vite) ke Backend
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173", // Sesuaikan dengan port Frontend Vite Anda
-    credentials: true, // Wajib true agar cookie token bisa lewat
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
   }),
 );
-
+app.use(compression()); // Gzip responses untuk performa & bandwidth
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(cookieParser());
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "short" : "dev"));
+
+// Rate limit untuk semua /api (lindungi dari abuse, siap lalu lintas tinggi)
+app.use("/api", apiLimiter);
 
 // --- Base Route ---
 app.get("/", (req, res) => {
@@ -88,7 +94,7 @@ ConnectedPlatform.belongsTo(User, { foreignKey: "userId" });
 
 // 4. Agent <-> ConnectedPlatform (One-to-One atau One-to-Many tergantung kebutuhan)
 // Skenario: 1 Agent bisa dipakai di banyak nomor? Atau 1 Agent 1 Nomor?
-// Untuk simplifikasi SaaS sapaku.ai: 1 Platform punya 1 Active Agent.
+// Untuk simplifikasi SaaS vlow.ai: 1 Platform punya 1 Active Agent.
 Agent.hasMany(ConnectedPlatform, { foreignKey: "agentId" });
 ConnectedPlatform.belongsTo(Agent, { foreignKey: "agentId" });
 
@@ -105,7 +111,9 @@ const startServer = async () => {
     await sequelize.authenticate();
     logger.info("Database Connected Successfully.");
 
-    await sequelize.sync({ alter: true });
+    // Di production, hindari alter otomatis (set SYNC_ALTER=true hanya saat deploy schema baru)
+    const useAlter = process.env.NODE_ENV !== "production" || process.env.SYNC_ALTER === "true";
+    await sequelize.sync({ alter: useAlter });
     logger.info("Database Models Synced.");
 
     app.listen(PORT, () => {

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const THEME_KEY = "sapaku-theme";
+const THEME_KEY = "vlow-theme";
 
 const getInitialTheme = () => {
   try {

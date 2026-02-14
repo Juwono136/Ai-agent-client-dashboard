@@ -5,6 +5,7 @@ import { resetPasswordUser, reset } from "../features/auth/authSlice";
 import toast from "react-hot-toast";
 import { FaLock, FaEye, FaEyeSlash, FaArrowRight, FaCircleNotch } from "react-icons/fa";
 import InfoModal from "../components/InfoModal";
+import vlowLogo from "../assets/vlow-logo.PNG";
 
 const ResetPassword = () => {
   const { resetToken } = useParams(); // Ambil token dari URL
@@ -78,7 +79,8 @@ const ResetPassword = () => {
         </div>
         <div className="relative z-10">
           <h1 className="text-3xl font-extrabold tracking-wide flex items-center gap-2">
-            Sapaku<span className="text-[#BDE8F5]">.ai</span>
+            <img src={vlowLogo} alt="Vlow.ai" className="h-9 w-auto" />
+            Vlow<span className="text-[#BDE8F5]">.ai</span>
           </h1>
         </div>
         <div className="relative z-10 mb-20">
@@ -90,7 +92,7 @@ const ResetPassword = () => {
           </p>
         </div>
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Sapaku.ai Technology.
+          © {new Date().getFullYear()} Vlow.ai Technology.
         </div>
       </div>
       {/* --- KANAN: Form --- */}

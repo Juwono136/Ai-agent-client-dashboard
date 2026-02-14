@@ -39,6 +39,12 @@ const ConnectedPlatform = sequelize.define("ConnectedPlatform", {
     type: DataTypes.UUID,
     allowNull: false,
   },
+}, {
+  indexes: [
+    { fields: ["userId"] },
+    { fields: ["sessionId"] },
+    { fields: ["userId", "updatedAt"] },
+  ],
 });
 
 export default ConnectedPlatform;

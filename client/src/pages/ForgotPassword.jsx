@@ -5,6 +5,7 @@ import { forgotPasswordUser, reset } from "../features/auth/authSlice";
 import toast from "react-hot-toast";
 import { FaEnvelope, FaArrowLeft, FaCircleNotch, FaPaperPlane } from "react-icons/fa";
 import InfoModal from "../components/InfoModal";
+import vlowLogo from "../assets/vlow-logo.PNG";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -63,7 +64,8 @@ const ForgotPassword = () => {
             to="/login"
             className="text-3xl font-extrabold tracking-wide flex items-center gap-2"
           >
-            Sapaku<span className="text-[#BDE8F5]">.ai</span>
+            <img src={vlowLogo} alt="Vlow.ai" className="h-9 w-auto" />
+            Vlow<span className="text-[#BDE8F5]">.ai</span>
           </Link>
         </div>
         {/* ... Content Kiri ... */}
@@ -76,7 +78,7 @@ const ForgotPassword = () => {
           </p>
         </div>
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Sapaku.ai Technology.
+          © {new Date().getFullYear()} Vlow.ai Technology.
         </div>
       </div>
 

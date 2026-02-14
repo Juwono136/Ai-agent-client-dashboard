@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { loginUser, reset } from "../features/auth/authSlice";
 import toast from "react-hot-toast";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight, FaCircleNotch } from "react-icons/fa";
+import vlowLogo from "../assets/vlow-logo.PNG";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -68,7 +69,8 @@ const Login = () => {
 
         <div className="relative z-10">
           <h1 className="text-3xl font-extrabold tracking-wide flex items-center gap-2">
-            Sapaku<span className="text-[#BDE8F5]">.ai</span>
+            <img src={vlowLogo} alt="Vlow.ai" className="h-9 w-auto" />
+            Vlow<span className="text-[#BDE8F5]">.ai</span>
           </h1>
         </div>
 
@@ -83,7 +85,7 @@ const Login = () => {
         </div>
 
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Sapaku.ai Technology.
+          © {new Date().getFullYear()} Vlow.ai Technology.
         </div>
       </div>
 
@@ -93,8 +95,9 @@ const Login = () => {
           className={`w-full max-w-md bg-[var(--color-bg)] p-8 md:p-10 rounded-3xl shadow-lg border border-[var(--color-border)] transition-all duration-1000 delay-300 ease-out transform ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
         >
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-[var(--color-primary)]">
-              Sapaku<span className="opacity-80">.ai</span>
+            <h1 className="text-3xl font-extrabold text-[var(--color-primary)] flex items-center justify-center gap-2">
+              <img src={vlowLogo} alt="Vlow.ai" className="h-9 w-auto" />
+              Vlow<span className="opacity-80">.ai</span>
             </h1>
           </div>
 

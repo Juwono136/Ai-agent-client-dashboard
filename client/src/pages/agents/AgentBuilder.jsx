@@ -160,12 +160,33 @@ const AgentBuilder = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: value }));
   };
 
+  // Batasan upload gambar: max 2MB, hanya jpg/jpeg/png
+  const IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+  const IMAGE_ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
+  const validateImageFile = (file) => {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const allowedExt = ["jpg", "jpeg", "png"];
+    if (!allowedExt.includes(ext) || !IMAGE_ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Hanya file gambar JPG, JPEG, atau PNG yang diizinkan.");
+      return false;
+    }
+    if (file.size > IMAGE_MAX_SIZE_BYTES) {
+      toast.error("Ukuran gambar maksimal 2MB.");
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setWelcomeImageFile(file);
-      setPreviewImage(URL.createObjectURL(file));
+    if (!file) return;
+    if (!validateImageFile(file)) {
+      e.target.value = "";
+      return;
     }
+    setWelcomeImageFile(file);
+    setPreviewImage(URL.createObjectURL(file));
   };
 
   const handleRemoveImage = (e) => {

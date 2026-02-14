@@ -17,6 +17,11 @@ export const validateCreateUser = [
     .normalizeEmail(),
 
   body("role").optional().isIn(["admin", "customer"]).withMessage("Role harus admin atau customer"),
+
+  body("platformSessionLimit")
+    .optional()
+    .isInt({ min: 1, max: 10 })
+    .withMessage("Limit koneksi platform harus antara 1 dan 10"),
 ];
 
 export const validateUpdateUser = [
@@ -32,6 +37,11 @@ export const validateUpdateUser = [
     .optional()
     .isBoolean()
     .withMessage("Status Active harus berupa boolean (true/false)"),
+
+  body("platformSessionLimit")
+    .optional()
+    .isInt({ min: 1, max: 10 })
+    .withMessage("Limit koneksi platform harus antara 1 dan 10"),
 ];
 
 export const validateUserId = [param("id").isUUID().withMessage("Format ID User tidak valid")];

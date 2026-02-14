@@ -2,6 +2,7 @@ import ConnectedPlatform from "../models/ConnectedPlatform.js";
 import Agent from "../models/Agent.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import { isCustomerSubscriptionActive } from "../utils/subscriptionUtils.js";
 import * as wahaService from "../services/wahaService.js";
 import { Op } from "sequelize";
 
@@ -16,10 +17,9 @@ export const createPlatform = async (req, res, next) => {
       return next(new AppError("Nama Platform dan Agent wajib dipilih", 400));
     }
 
-    // 2. Cek Webhook URL User dan Subscription (untuk customer)
+    // 2. Cek Webhook URL User, Subscription, dan Limit Koneksi (untuk customer)
     const user = await User.findByPk(req.user.id);
-    
-    // Check subscription for customer
+
     if (user.role === "customer") {
       if (!user.subscriptionExpiry) {
         return next(new AppError("Langganan Anda belum diaktifkan. Silakan hubungi administrator.", 403));
@@ -27,6 +27,18 @@ export const createPlatform = async (req, res, next) => {
       const expiryDate = new Date(user.subscriptionExpiry);
       if (expiryDate < new Date()) {
         return next(new AppError("Langganan Anda telah berakhir. Silakan hubungi administrator untuk memperpanjang.", 403));
+      }
+
+      // Enforce limit koneksi WhatsApp (1-10, diatur admin di User Management)
+      const limit = user.platformSessionLimit ?? 5;
+      const currentCount = await ConnectedPlatform.count({ where: { userId: req.user.id } });
+      if (currentCount >= limit) {
+        return next(
+          new AppError(
+            `Anda telah mencapai batas koneksi WhatsApp (${currentCount}/${limit}). Hubungi administrator untuk menambah limit.`,
+            403,
+          ),
+        );
       }
     }
 
@@ -96,6 +108,10 @@ export const createPlatform = async (req, res, next) => {
 // @route   GET /api/platforms/:id/qr
 export const getPlatformQR = async (req, res, next) => {
   try {
+    if (req.user.role === "customer" && !isCustomerSubscriptionActive(req.user)) {
+      return next(new AppError("Langganan telah berakhir. Tidak dapat mengakses koneksi sampai diperpanjang oleh administrator.", 403));
+    }
+
     const platform = await ConnectedPlatform.findOne({
       where: { id: req.params.id, userId: req.user.id },
     });
@@ -135,6 +151,17 @@ export const getPlatformStatus = async (req, res, next) => {
     });
 
     if (!platform) return next(new AppError("Platform tidak ditemukan", 404));
+
+    // Jika customer langganan habis: koneksi efektif ditangguhkan (tidak bisa dipakai)
+    if (req.user.role === "customer" && !isCustomerSubscriptionActive(req.user)) {
+      return res.status(200).json({
+        success: true,
+        status: "STOPPED",
+        rawStatus: "SUBSCRIPTION_EXPIRED",
+        isConnected: false,
+        subscriptionSuspended: true,
+      });
+    }
 
     // 1. Ambil status mentah dari WAHA
     // Kemungkinan output WAHA: 'STOPPED', 'STARTING', 'SCAN_QR_CODE', 'WORKING', 'FAILED'
@@ -229,9 +256,21 @@ export const getMyPlatforms = async (req, res, next) => {
 
     const totalPages = Math.ceil(count / limitNum);
 
+    // Jika customer langganan habis: semua koneksi efektif ditangguhkan + stop sesi WAHA
+    const subscriptionActive = isCustomerSubscriptionActive(req.user);
+    const data = subscriptionActive
+      ? platforms
+      : platforms.map((p) => ({ ...(p.toJSON ? p.toJSON() : p), subscriptionSuspended: true }));
+
+    if (!subscriptionActive && platforms.length > 0) {
+      platforms.forEach((p) => {
+        wahaService.stopWahaSession(p.sessionId).catch(() => {});
+      });
+    }
+
     res.status(200).json({
       success: true,
-      data: platforms,
+      data,
       pagination: {
         total: count,
         page: pageNum,

@@ -37,6 +37,9 @@ export const sendTokenResponse = (user, statusCode, res) => {
         role: user.role,
         isFirstLogin: user.isFirstLogin,
         subscriptionExpiry: user.subscriptionExpiry,
+        isTrial: user.isTrial ?? false,
+        // Limit koneksi WhatsApp untuk customer (1-10)
+        ...(user.role === "customer" ? { platformSessionLimit: user.platformSessionLimit ?? 5 } : {}),
         // Don't send n8nWebhookUrl to customer - security measure
         ...(user.role === "admin" ? { n8nWebhookUrl: user.n8nWebhookUrl } : {}),
       },

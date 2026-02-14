@@ -17,19 +17,20 @@ import {
 import { runValidation } from "../validators/validatorHandler.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
+import { authLimiter } from "../middlewares/rateLimitMiddleware.js";
 
 const router = express.Router();
 
 // --- Public Routes ---
 
-// Login: Validasi Input -> Cek User -> Set Cookie
-router.post("/login", loginValidator, runValidation, login);
+// Login: Rate limit ketat -> Validasi -> Cek User -> Set Cookie
+router.post("/login", authLimiter, loginValidator, runValidation, login);
 
 // Logout: Hapus Cookie
 router.get("/logout", logout);
 
-// Forgot Password: Validasi Email -> Kirim Link
-router.post("/forgot-password", forgotPasswordValidator, runValidation, forgotPassword);
+// Forgot Password: Rate limit -> Validasi Email -> Kirim Link
+router.post("/forgot-password", authLimiter, forgotPasswordValidator, runValidation, forgotPassword);
 
 // Reset Password Final: Validasi Password Baru -> Update DB -> Auto Login
 router.put(

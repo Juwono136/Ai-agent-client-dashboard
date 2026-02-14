@@ -177,7 +177,7 @@ const GeneralTab = ({
                 <input
                   type="file"
                   name="welcomeImage"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                   onClick={(e) => {
@@ -197,7 +197,7 @@ const GeneralTab = ({
                 <input
                   type="file"
                   name="welcomeImage"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
@@ -209,7 +209,7 @@ const GeneralTab = ({
             )}
 
             <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
-              Gambar ini akan dikirim bersamaan dengan pesan sambutan saat user pertama kali chat.
+              Gambar ini akan dikirim bersamaan dengan pesan sambutan saat user pertama kali chat. Maks. 2MB, format JPG/PNG.
             </p>
           </div>
         </div>
