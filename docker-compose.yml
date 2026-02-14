@@ -1,0 +1,79 @@
+version: "3.8"
+
+services:
+  backend:
+    image: juwono136/vlow-api:latest
+    pull_policy: always
+    container_name: vlow-api
+    restart: always
+    environment:
+      # SERVER CONFIG
+      PORT: ${PORT}
+      NODE_ENV: ${NODE_ENV}
+      FRONTEND_URL: ${FRONTEND_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+
+      # EMAIL CONFIG
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_EMAIL: ${SMTP_EMAIL}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+      FROM_NAME: ${FROM_NAME}
+
+      # SEEDER CONFIG FILE
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      # DATABASE CONFIG
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_DIALECT: ${DB_DIALECT}
+
+      # MINIO CONFIGURATION
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+
+      # N8N CONFIG FOR SIMULATOR (CHAT PREVIEW)
+      N8N_SIMULATOR_URL: ${N8N_SIMULATOR_URL}
+
+      # WAHA CONFIG
+      WAHA_BASE_URL: ${WAHA_BASE_URL}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_EDITION: ${WAHA_EDITION}
+
+      # SECURITY CONFIG
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX}
+      RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX}
+      DB_POOL_MAX: ${DB_POOL_MAX}
+      SYNC_ALTER: ${SYNC_ALTER}
+    ports:
+      - "5000:5000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - tunnel
+
+  frontend:
+    image: juwono136/vlow-frontend:latest
+    pull_policy: always
+    container_name: vlow-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+    networks:
+      - tunnel
+
+networks:
+  tunnel:
+    external: true

@@ -1,0 +1,111 @@
+name: VlowAI CI/CD
+
+on:
+    push:
+        branches:
+            - master
+        paths-ignore:
+            - "README.md"
+    pull_request:
+        branches:
+            - master
+        paths-ignore:
+            - "README.md"
+
+jobs:
+    continuous-integration:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Login to Docker Hub
+              run: |
+                  echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+                  -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            - name: Build and Push Backend Image
+              run: |
+                  docker build -t ${{ secrets.DOCKER_USERNAME }}/vlow-api:latest ./server
+                  docker push ${{ secrets.DOCKER_USERNAME }}/vlow-api:latest
+
+            - name: Build and Push Frontend Image
+              run: |
+                  docker build -t ${{ secrets.DOCKER_USERNAME }}/vlow-frontend:latest ./client
+                  docker push ${{ secrets.DOCKER_USERNAME }}/vlow-frontend:latest
+
+    continuous-deployment:
+        needs: continuous-integration
+        runs-on: self-hosted
+
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Pull Latest Backend Image
+              run: docker pull ${{ secrets.DOCKER_USERNAME }}/vlow-api:latest
+
+            - name: Pull Latest Frontend Image
+              run: docker pull ${{ secrets.DOCKER_USERNAME }}/vlow-frontend:latest
+
+            - name: Stop and Remove Old Containers
+              run: |
+                  docker compose down || true
+
+            - name: Run New Containers
+              run: |
+                  docker compose up -d --remove-orphans
+              env:
+                  # SERVER CONFIG
+                  PORT: ${{ secrets.PORT }}
+                  NODE_ENV: ${{ secrets.NODE_ENV }}
+                  FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  JWT_EXPIRE: ${{ secrets.JWT_EXPIRE }}
+
+                  # EMAIL CONFIG
+                  SMTP_HOST: ${{ secrets.SMTP_HOST }}
+                  SMTP_PORT: ${{ secrets.SMTP_PORT }}
+                  SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+                  SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+                  FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+                  FROM_NAME: ${{ secrets.FROM_NAME }}
+
+                  # SEEDER CONFIG FILE
+                  ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+                  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+                  # DATABASE CONFIG
+                  DB_HOST: ${{ secrets.DB_HOST }}
+                  DB_USER: ${{ secrets.DB_USER }}
+                  DB_PASS: ${{ secrets.DB_PASS }}
+                  DB_NAME: ${{ secrets.DB_NAME }}
+                  DB_DIALECT: ${{ secrets.DB_DIALECT }}
+
+                  # MINIO CONFIGURATION
+                  MINIO_PUBLIC_URL: ${{ secrets.MINIO_PUBLIC_URL }}
+                  MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+                  MINIO_PORT: ${{ secrets.MINIO_PORT }}
+                  MINIO_USE_SSL: ${{ secrets.MINIO_USE_SSL }}
+                  MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+                  MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+                  MINIO_BUCKET: ${{ secrets.MINIO_BUCKET }}
+
+                  # N8N CONFIG
+                  N8N_SIMULATOR_URL: ${{ secrets.N8N_SIMULATOR_URL }}
+
+                  # AI CONFIGURATION
+                  WAHA_BASE_URL: ${{ secrets.WAHA_BASE_URL }}
+                  WAHA_API_KEY: ${{ secrets.WAHA_API_KEY }}
+                  WAHA_EDITION: ${{ secrets.WAHA_EDITION }}
+
+                  # SECURITY CONFIG
+                  RATE_LIMIT_MAX: ${{ secrets.RATE_LIMIT_MAX }}
+                  RATE_LIMIT_AUTH_MAX: ${{ secrets.RATE_LIMIT_AUTH_MAX }}
+                  DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+                  SYNC_ALTER: ${{ secrets.SYNC_ALTER }}
+            - name: Add Containers to Tunnel
+              run: |
+                  docker network connect ${{ secrets.TUNNEL_NAME }} vlow-api || true
+                  docker network connect ${{ secrets.TUNNEL_NAME }} vlow-frontend || true
