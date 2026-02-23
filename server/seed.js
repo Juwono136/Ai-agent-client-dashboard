@@ -30,6 +30,7 @@ const seedAdmin = async () => {
       email: process.env.ADMIN_EMAIL || "admin@gmail.com",
       password: adminPassword,
       role: "admin",
+      agentLimit: 5,
       isActive: true,
       isFirstLogin: false, // Admin seed tidak perlu ganti password saat login pertama
     });
