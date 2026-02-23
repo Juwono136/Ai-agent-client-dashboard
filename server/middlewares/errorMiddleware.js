@@ -4,11 +4,14 @@ const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
 
-  // Log error (gunakan logger Winston jika ada, atau console untuk debug)
-  // Kita cek env agar log lebih rapi
+  // Log error (404 tidak di-log sebagai ERROR agar console tidak penuh saat client polling platform yang sudah dihapus)
   if (process.env.NODE_ENV === "development") {
-    console.error("ERROR:", err);
-  } else {
+    if (err.statusCode === 404) {
+      console.warn("404 -", err.message, "-", req.originalUrl);
+    } else {
+      console.error("ERROR:", err);
+    }
+  } else if (err.statusCode !== 404) {
     logger.error(
       `${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
     );

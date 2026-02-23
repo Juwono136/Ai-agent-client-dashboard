@@ -81,44 +81,48 @@ const PlatformModal = ({ isOpen, onClose, onSubmit, initialData, agents }) => {
     setStatusMessage("Menyiapkan Browser WhatsApp...");
     setQrLoading(true); // Set loading awal
 
+    // Interval polling (5s) agar tidak membebani server/WAHA saat banyak session
+    const POLL_INTERVAL_MS = 5000;
     // 1. Polling Status Koneksi (WORKING / SCANNING)
     statusIntervalRef.current = setInterval(() => {
-      dispatch(getPlatformStatus(platformId)).then((res) => {
-        const status = res.payload?.status;
-        if (status === "WORKING") {
+      dispatch(getPlatformStatus(platformId))
+        .then((res) => {
+          const status = res.payload?.status;
+          if (status === "WORKING") {
+            stopAllPolling();
+            setTimeout(() => onClose(), 2000);
+          }
+        })
+        .catch(() => {
           stopAllPolling();
-          // Delay sedikit biar user lihat status connected
-          setTimeout(() => onClose(), 2000);
-        }
-      });
-    }, 3000);
+          setStatusMessage("Koneksi tidak ditemukan");
+          setTimeout(() => onClose(), 1500);
+        });
+    }, POLL_INTERVAL_MS);
 
     // 2. Polling QR Code (Auto-Retry sampai dapat gambar valid)
-    fetchQRLoop(platformId);
+    fetchQRLoop(platformId, POLL_INTERVAL_MS);
   };
 
-  const fetchQRLoop = (platformId) => {
-    // Fungsi untuk memanggil QR
+  const fetchQRLoop = (platformId, intervalMs = 5000) => {
     const fetchIt = () => {
-      dispatch(getPlatformQR(platformId)).then((action) => {
-        // Cek apakah kita dapat gambar valid di payload
-        if (action.payload?.qr) {
-          setQrLoading(false);
-          setStatusMessage("Scan QR Code ini");
-          // Jika sudah dapat QR, kita bisa stop polling QR (hemat resource),
-          // ATAU biarkan polling lambat jika QR berubah (dynamic).
-          // Disini kita biarkan interval tapi perlambat, atau stop jika mau refresh manual.
-          // Untuk WAHA, QR statis biasanya cukup refresh manual jika expire.
-          if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
-        }
-      });
+      dispatch(getPlatformQR(platformId))
+        .then((action) => {
+          if (action.payload?.qr) {
+            setQrLoading(false);
+            setStatusMessage("Scan QR Code ini");
+            if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+          }
+        })
+        .catch(() => {
+          stopAllPolling();
+          setStatusMessage("Koneksi tidak ditemukan");
+          setTimeout(() => onClose(), 1500);
+        });
     };
 
-    // Panggil pertama kali langsung
     fetchIt();
-
-    // Loop setiap 3 detik jika belum dapat QR
-    qrIntervalRef.current = setInterval(fetchIt, 3000);
+    qrIntervalRef.current = setInterval(fetchIt, intervalMs);
   };
 
   // --- MANUAL REFRESH ---

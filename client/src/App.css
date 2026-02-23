@@ -66,3 +66,79 @@
 .dark .ql-editor.ql-blank::before {
   color: var(--color-text-muted);
 }
+
+/* ========== Subscription Date Picker (User Form Modal) ========== */
+.subscription-date-picker-wrapper {
+  width: 100%;
+}
+
+.subscription-date-picker-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-bg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.subscription-date-picker-inner:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline: none;
+}
+
+.subscription-date-picker-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.subscription-date-picker-inner:focus-within .subscription-date-picker-icon {
+  color: var(--color-primary);
+}
+
+.subscription-date-picker-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-radius: 1rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.subscription-date-picker-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0.25rem;
+  margin-left: auto;
+}
+
+.subscription-date-picker-input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+/* Dark mode: native calendar popup ikut tema gelap */
+.dark .subscription-date-picker-inner {
+  border-color: var(--color-border);
+}
+
+.dark .subscription-date-picker-inner:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.dark .subscription-date-picker-input {
+  color-scheme: dark;
+}
+
+.dark .subscription-date-picker-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+}

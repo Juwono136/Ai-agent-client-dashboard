@@ -5,51 +5,80 @@ import AppError from "../utils/AppError.js";
 import sendEmail from "../utils/emailService.js";
 import { getWelcomeTemplate } from "../utils/emailTemplates.js";
 
+// n8n Test URL hanya bisa dipanggil sekali dari editor; untuk WAHA harus pakai Production URL + workflow aktif
+const rejectN8nTestWebhook = (url, next) => {
+  if (!url || typeof url !== "string") return false;
+  if (url.trim().toLowerCase().includes("webhook-test")) {
+    next(
+      new AppError(
+        "Gunakan URL Webhook Production dari n8n (bukan Test). Di n8n: gunakan URL Production dan aktifkan workflow.",
+        400,
+      ),
+    );
+    return true;
+  }
+  return false;
+};
+
 // @desc    Create User (Admin Invite)
 // @route   POST /api/users
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, role, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
+    const { name, email, role, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
+
+    if (n8nWebhookUrl && rejectN8nTestWebhook(n8nWebhookUrl, next)) return;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return next(new AppError("Email ini sudah terdaftar dalam sistem.", 400));
     }
 
-    // Customer wajib punya masa berlaku: trial 7 hari atau langganan (1-12 bulan)
+    // Customer wajib punya masa berlaku: trial 7 hari atau tanggal berakhir (YYYY-MM-DD)
     if (role === "customer") {
-      const validSubscription =
-        subscriptionMonths === "trial" ||
-        (subscriptionMonths !== undefined &&
-          subscriptionMonths !== "" &&
-          !Number.isNaN(parseInt(subscriptionMonths, 10)) &&
-          parseInt(subscriptionMonths, 10) >= 0 &&
-          parseInt(subscriptionMonths, 10) <= 12);
-      if (!validSubscription) {
+      const hasTrial = subscriptionType === "trial";
+      const hasDate = bodyExpiry && typeof bodyExpiry === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bodyExpiry);
+      const hasLegacyMonths =
+        subscriptionMonths !== undefined &&
+        subscriptionMonths !== "" &&
+        !Number.isNaN(parseInt(subscriptionMonths, 10)) &&
+        parseInt(subscriptionMonths, 10) >= 0 &&
+        parseInt(subscriptionMonths, 10) <= 12;
+      if (!hasTrial && !hasDate && !hasLegacyMonths) {
         return next(
-          new AppError("Pilih masa berlaku: Uji Coba 7 Hari atau durasi langganan (1-12 bulan).", 400),
+          new AppError("Pilih Uji Coba 7 Hari atau tanggal berakhir langganan.", 400),
         );
       }
     }
 
     // Generate Secure Random Password
     const randomHex = crypto.randomBytes(4).toString("hex");
-    const tempPassword = `${randomHex}Vlow!`; // Contoh: a1b2c3d4Vlow!
+    const tempPassword = `${randomHex}Vlow!`;
 
     // Calculate subscription expiry date (only for customer)
     let subscriptionExpiry = null;
     let isTrial = false;
-    if (role === "customer" && subscriptionMonths !== undefined && subscriptionMonths !== "") {
-      if (subscriptionMonths === "trial") {
-        // Uji coba 7 hari: berakhir 7 hari dari sekarang (akhir hari)
+    if (role === "customer") {
+      if (subscriptionType === "trial") {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 7);
         expiryDate.setHours(23, 59, 59, 999);
         subscriptionExpiry = expiryDate;
         isTrial = true;
-      } else {
+      } else if (bodyExpiry && /^\d{4}-\d{2}-\d{2}$/.test(bodyExpiry)) {
+        const chosen = new Date(bodyExpiry);
+        if (Number.isNaN(chosen.getTime())) {
+          return next(new AppError("Format tanggal berakhir langganan tidak valid.", 400));
+        }
+        chosen.setHours(23, 59, 59, 999);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (chosen < today) {
+          return next(new AppError("Tanggal berakhir langganan tidak boleh di masa lalu.", 400));
+        }
+        subscriptionExpiry = chosen;
+      } else if (subscriptionMonths !== undefined && subscriptionMonths !== "") {
+        // Legacy: 0 = 1 hari, 1-12 = bulan
         const months = parseInt(subscriptionMonths, 10);
-        // TESTING: Handle opsi 1 hari untuk testing (value = 0)
         if (months === 0) {
           const expiryDate = new Date();
           expiryDate.setDate(expiryDate.getDate() + 1);
@@ -218,7 +247,7 @@ export const getUserById = async (req, res, next) => {
 // @route   PUT /api/users/:id
 export const updateUser = async (req, res, next) => {
   try {
-    const { name, role, isActive, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
+    const { name, role, isActive, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
 
     const user = await User.findByPk(req.params.id);
     if (!user) {
@@ -234,7 +263,10 @@ export const updateUser = async (req, res, next) => {
     if (name) user.name = name;
     if (role) user.role = role;
     if (isActive !== undefined) user.isActive = isActive;
-    if (n8nWebhookUrl !== undefined) user.n8nWebhookUrl = n8nWebhookUrl || null;
+    if (n8nWebhookUrl !== undefined) {
+      if (rejectN8nTestWebhook(n8nWebhookUrl, next)) return;
+      user.n8nWebhookUrl = n8nWebhookUrl || null;
+    }
 
     // Limit koneksi platform (1-10) hanya untuk customer
     if (role === "customer" && platformSessionLimit !== undefined) {
@@ -248,10 +280,30 @@ export const updateUser = async (req, res, next) => {
     }
 
     // Handle subscription expiry (only for customer)
-    if (role === "customer" && subscriptionMonths !== undefined) {
-      if (subscriptionMonths && subscriptionMonths !== "") {
+    if (role === "customer") {
+      if (subscriptionType === "trial") {
+        const baseDate = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
+          ? new Date(user.subscriptionExpiry)
+          : new Date();
+        const expiryDate = new Date(baseDate);
+        expiryDate.setDate(expiryDate.getDate() + 7);
+        expiryDate.setHours(23, 59, 59, 999);
+        user.subscriptionExpiry = expiryDate;
+        user.isTrial = true;
+      } else if (bodyExpiry && typeof bodyExpiry === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bodyExpiry)) {
+        const chosen = new Date(bodyExpiry);
+        if (!Number.isNaN(chosen.getTime())) {
+          chosen.setHours(23, 59, 59, 999);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (chosen >= today) {
+            user.subscriptionExpiry = chosen;
+            user.isTrial = false;
+          }
+        }
+      } else if (subscriptionMonths !== undefined && subscriptionMonths !== "" && subscriptionMonths !== null) {
+        // Legacy: bulan atau trial
         if (subscriptionMonths === "trial") {
-          // Beri/perpanjang trial 7 hari dari sekarang (akhir hari)
           const expiryDate = new Date();
           expiryDate.setDate(expiryDate.getDate() + 7);
           expiryDate.setHours(23, 59, 59, 999);
@@ -259,7 +311,6 @@ export const updateUser = async (req, res, next) => {
           user.isTrial = true;
         } else {
           const months = parseInt(subscriptionMonths, 10);
-          // TESTING: Handle opsi 1 hari untuk testing (value = 0)
           if (months === 0) {
             const baseDate = user.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
               ? new Date(user.subscriptionExpiry)
@@ -276,12 +327,10 @@ export const updateUser = async (req, res, next) => {
             expiryDate.setMonth(expiryDate.getMonth() + months);
             user.subscriptionExpiry = expiryDate;
           }
-          user.isTrial = false; // Langganan berbayar bukan trial
+          user.isTrial = false;
         }
-      } else {
-        user.subscriptionExpiry = null;
-        user.isTrial = false;
       }
+      // Jika tidak ada subscriptionType/bodyExpiry/subscriptionMonths yang diisi, tidak mengubah expiry (edit mode: admin bisa hanya ubah nama dll)
     } else if (role !== "customer") {
       user.subscriptionExpiry = null;
       user.isTrial = false;

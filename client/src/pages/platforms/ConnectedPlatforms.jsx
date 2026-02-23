@@ -128,11 +128,16 @@ const ConnectedPlatforms = () => {
 
   const handleConfirmDelete = async () => {
     if (!confirmState.platform) return;
-    const resultAction = await dispatch(deletePlatform(confirmState.platform.id));
+    const deletedId = confirmState.platform.id;
+    const resultAction = await dispatch(deletePlatform(deletedId));
     if (deletePlatform.fulfilled.match(resultAction)) {
       toast.success("Koneksi berhasil dihapus", { id: "platform-delete-success" });
       handleCloseDeleteConfirm();
-      // Refetch platforms after deletion
+      // Jika modal sedang menampilkan platform yang dihapus, tutup modal agar polling stop (hindari 404 berulang)
+      if (selectedPlatform?.id === deletedId) {
+        setIsModalOpen(false);
+        setSelectedPlatform(null);
+      }
       dispatch(
         getPlatforms({
           page: currentPage,

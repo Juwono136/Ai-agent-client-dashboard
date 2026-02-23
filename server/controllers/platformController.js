@@ -47,6 +47,14 @@ export const createPlatform = async (req, res, next) => {
     if (!targetWebhookUrl) {
       return next(new AppError("Admin belum setup Workflow URL untuk user ini.", 403));
     }
+    if (targetWebhookUrl.toLowerCase().includes("webhook-test")) {
+      return next(
+        new AppError(
+          "URL webhook n8n untuk user ini masih berupa Test URL. Di User Management ganti ke URL Production dari n8n dan pastikan workflow sudah diaktifkan.",
+          400,
+        ),
+      );
+    }
 
     // --- LOGIKA BARU UNTUK WAHA CORE (TESTING) ---
     let finalSessionId;
@@ -325,9 +333,10 @@ export const deletePlatform = async (req, res, next) => {
     });
     if (!platform) return next(new AppError("Platform not found", 404));
 
-    // Stop di WAHA
-    await wahaService.stopWahaSession(platform.sessionId);
-    // Hapus di DB
+    const sessionId = platform.sessionId;
+    // Logout lalu hapus session dari WAHA dashboard (agar tidak perlu hapus manual)
+    await wahaService.stopWahaSession(sessionId);
+    await wahaService.deleteWahaSession(sessionId);
     await platform.destroy();
 
     res.status(200).json({ success: true, message: "Platform deleted" });

@@ -15,13 +15,25 @@ const isValidWebhookUrl = (value) => {
   }
 };
 
+/** Format Date ke YYYY-MM-DD untuk input type="date" */
+const toDateInputValue = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+};
+
+/** Tanggal minimal (hari ini) untuk date picker */
+const getTodayISO = () => new Date().toISOString().slice(0, 10);
+
 const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     role: "customer",
     isActive: true,
-    subscriptionMonths: "",
+    subscriptionMode: "date", // "trial" | "date"
+    subscriptionExpiryDate: "",
     n8nWebhookUrl: "",
     platformSessionLimit: 5,
   });
@@ -29,14 +41,16 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        // For edit mode, subscriptionMonths is used to extend subscription
-        // We don't calculate from expiry date, just leave it empty for admin to set extension
+        const existingExpiry = initialData.subscriptionExpiry
+          ? toDateInputValue(initialData.subscriptionExpiry)
+          : "";
         setFormData({
           name: initialData.name,
           email: initialData.email,
           role: initialData.role,
           isActive: initialData.isActive,
-          subscriptionMonths: "", // Empty for edit - admin will set extension months
+          subscriptionMode: "date",
+          subscriptionExpiryDate: existingExpiry,
           n8nWebhookUrl: initialData.n8nWebhookUrl || "",
           platformSessionLimit: initialData.platformSessionLimit ?? 5,
         });
@@ -46,7 +60,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           email: "",
           role: "customer",
           isActive: true,
-          subscriptionMonths: "",
+          subscriptionMode: "date",
+          subscriptionExpiryDate: "",
           n8nWebhookUrl: "",
           platformSessionLimit: 5,
         });
@@ -73,7 +88,29 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
       }
     }
 
-    onSubmit(formData);
+    // Payload langganan: trial atau tanggal berakhir
+    const payload = { ...formData };
+    if (formData.role === "customer") {
+      if (formData.subscriptionMode === "trial") {
+        payload.subscriptionType = "trial";
+        delete payload.subscriptionExpiryDate;
+        delete payload.subscriptionMode;
+      } else {
+        if (!formData.subscriptionExpiryDate) {
+          toast.error("Pilih tanggal berakhir langganan atau opsi Uji coba 7 hari.");
+          return;
+        }
+        const chosen = new Date(formData.subscriptionExpiryDate);
+        if (chosen < new Date(new Date().toISOString().slice(0, 10))) {
+          toast.error("Tanggal berakhir langganan tidak boleh di masa lalu.");
+          return;
+        }
+        payload.subscriptionExpiry = formData.subscriptionExpiryDate;
+        delete payload.subscriptionExpiryDate;
+        delete payload.subscriptionMode;
+      }
+    }
+    onSubmit(payload);
   };
 
   return (
@@ -187,42 +224,89 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
               )}
             </div>
 
-            {/* Subscription Validity - Only for Customer */}
+            {/* Masa Berlaku Langganan - Hanya untuk Customer */}
             {formData.role === "customer" && (
-              <div className="form-control">
+              <div className="form-control space-y-3">
                 <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
                   Masa Berlaku Langganan
                 </label>
-                <div className="relative">
-                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
-                    <FaCalendarAlt />
+
+                {initialData && initialData.subscriptionExpiry && (
+                  <div className="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] px-4 py-3">
+                    <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">
+                      Berakhir saat ini
+                    </p>
+                    <p className="text-sm font-semibold text-[var(--color-text)]">
+                      {new Date(initialData.subscriptionExpiry).toLocaleDateString("id-ID", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                      {initialData.isTrial && (
+                        <span className="ml-2 text-xs font-normal text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
+                          Trial
+                        </span>
+                      )}
+                    </p>
                   </div>
-                  <select
-                    className="select select-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]"
-                    value={formData.subscriptionMonths}
-                    onChange={(e) =>
-                      setFormData({ ...formData, subscriptionMonths: e.target.value })
-                    }
-                    required={formData.role === "customer"}
-                  >
-                    <option value="">Pilih Masa Berlaku</option>
-                    <option value="trial" className="text-[var(--color-primary)] font-semibold">
-                      Uji Coba 7 Hari (Trial)
-                    </option>
-                    {/* TESTING OPTION: Opsi 1 hari untuk testing - HAPUS atau KOMENTARI setelah testing selesai */}
-                    <option value="0" className="text-orange-600 font-bold">
-                      1 Hari (Testing)
-                    </option>
-                    {/* END TESTING OPTION */}
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                      <option key={month} value={month}>
-                        {month} {month === 1 ? "Bulan" : "Bulan"}
-                      </option>
-                    ))}
-                  </select>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="subscriptionMode"
+                      className="radio radio-sm radio-primary"
+                      checked={formData.subscriptionMode === "trial"}
+                      onChange={() =>
+                        setFormData({ ...formData, subscriptionMode: "trial" })
+                      }
+                    />
+                    <span className="text-sm font-medium text-[var(--color-text)]">
+                      Uji coba 7 hari (Trial)
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="subscriptionMode"
+                      className="radio radio-sm radio-primary"
+                      checked={formData.subscriptionMode === "date"}
+                      onChange={() =>
+                        setFormData({ ...formData, subscriptionMode: "date" })
+                      }
+                    />
+                    <span className="text-sm font-medium text-[var(--color-text)]">
+                      Pilih tanggal berakhir
+                    </span>
+                  </label>
                 </div>
-                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                  *Uji coba 7 hari atau pilih durasi langganan (1-12 bulan)
+
+                {formData.subscriptionMode === "date" && (
+                  <div className="subscription-date-picker-wrapper">
+                    <div className="subscription-date-picker-inner">
+                      <FaCalendarAlt className="subscription-date-picker-icon" />
+                      <input
+                        type="date"
+                        min={getTodayISO()}
+                        className="subscription-date-picker-input"
+                        value={formData.subscriptionExpiryDate}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            subscriptionExpiryDate: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <span className="text-[10px] text-[var(--color-text-muted)] block">
+                  {formData.subscriptionMode === "trial"
+                    ? "Akses penuh selama 7 hari. Setelah itu admin dapat memperpanjang dengan pilih tanggal berakhir."
+                    : "Pilih tanggal berakhir langganan. Tanggal tidak boleh di masa lalu."}
                 </span>
               </div>
             )}
@@ -278,11 +362,11 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                     onChange={(e) => setFormData({ ...formData, n8nWebhookUrl: e.target.value })}
                     required={!initialData && formData.role === "customer"}
                     pattern="https?://.+"
-                    title="Masukkan URL yang valid (contoh: https://n8n.example.com/webhook/...)"
+                    title="Gunakan URL Production (bukan webhook-test). Aktifkan workflow di n8n."
                   />
                 </div>
                 <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                  *Wajib diisi. Harus berupa link URL (http atau https) untuk webhook n8n.
+                  *Wajib diisi. Gunakan URL <strong>Production</strong> dari n8n (bukan Test) dan pastikan workflow sudah diaktifkan.
                 </span>
               </div>
             )}
