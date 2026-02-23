@@ -50,6 +50,13 @@ const User = sequelize.define(
       validate: { min: 1, max: 10 },
       comment: "Maksimal jumlah koneksi WhatsApp (Connected Platform) untuk customer (1-10)",
     },
+    agentLimit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 5,
+      validate: { min: 1, max: 20 },
+      comment: "Maksimal jumlah AI Agent yang boleh dibuat customer (1-20)",
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

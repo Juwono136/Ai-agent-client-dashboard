@@ -30,18 +30,24 @@ export const sendTokenResponse = (user, statusCode, res) => {
     .json({
       success: true,
       token, // Tetap dikirim di body sebagai opsi
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isFirstLogin: user.isFirstLogin,
-        subscriptionExpiry: user.subscriptionExpiry,
-        isTrial: user.isTrial ?? false,
-        // Limit koneksi WhatsApp untuk customer (1-10)
-        ...(user.role === "customer" ? { platformSessionLimit: user.platformSessionLimit ?? 5 } : {}),
-        // Don't send n8nWebhookUrl to customer - security measure
-        ...(user.role === "admin" ? { n8nWebhookUrl: user.n8nWebhookUrl } : {}),
-      },
+      user: buildUserPayload(user),
     });
 };
+
+/** Payload user untuk response (login & getMe) - konsisten di seluruh auth */
+export const buildUserPayload = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  isFirstLogin: user.isFirstLogin,
+  subscriptionExpiry: user.subscriptionExpiry,
+  isTrial: user.isTrial ?? false,
+  ...(user.role === "customer"
+    ? {
+        platformSessionLimit: user.platformSessionLimit ?? 5,
+        agentLimit: user.agentLimit,
+      }
+    : {}),
+  ...(user.role === "admin" ? { n8nWebhookUrl: user.n8nWebhookUrl } : {}),
+});

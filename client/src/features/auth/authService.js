@@ -11,6 +11,12 @@ const login = async (userData) => {
   return response.data.user;
 };
 
+// Get current user (data terbaru dari DB - setelah admin update, refresh halaman akan dapat data baru)
+const getMe = async () => {
+  const response = await axiosInstance.get("/auth/me");
+  return response.data.user;
+};
+
 // Logout User
 const logout = async () => {
   const response = await axiosInstance.get("/auth/logout");
@@ -40,6 +46,7 @@ const resetPassword = async (token, password) => {
 
 const authService = {
   login,
+  getMe,
   logout,
   forgotPassword,
   resetPassword,

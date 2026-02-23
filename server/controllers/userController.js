@@ -24,7 +24,7 @@ const rejectN8nTestWebhook = (url, next) => {
 // @route   POST /api/users
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, role, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
+    const { name, email, role, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit, agentLimit } = req.body;
 
     if (n8nWebhookUrl && rejectN8nTestWebhook(n8nWebhookUrl, next)) return;
 
@@ -92,11 +92,19 @@ export const createUser = async (req, res, next) => {
       }
     }
 
-    // Limit koneksi platform (1-10) hanya untuk customer; default 5 jika tidak dikirim
+    // Limit koneksi platform (1-10) dan limit AI agent (1-20 atau null = unlimited) hanya untuk customer
     const sessionLimit =
       role === "customer"
         ? Math.min(10, Math.max(1, parseInt(platformSessionLimit, 10) || 5))
         : null;
+    let agentLimitValue = null;
+    if (role === "customer") {
+      const parsed = parseInt(agentLimit, 10);
+      if (agentLimit != null && agentLimit !== "" && !Number.isNaN(parsed) && parsed >= 1 && parsed <= 20) {
+        agentLimitValue = parsed;
+      }
+      // else tetap null = unlimited
+    }
 
     const user = await User.create({
       name,
@@ -109,6 +117,7 @@ export const createUser = async (req, res, next) => {
       subscriptionExpiry: subscriptionExpiry,
       isTrial: isTrial,
       platformSessionLimit: sessionLimit,
+      agentLimit: agentLimitValue,
     });
 
     // Kirim Email Welcome
@@ -145,6 +154,7 @@ export const createUser = async (req, res, next) => {
         isTrial: user.isTrial ?? false,
         n8nWebhookUrl: user.n8nWebhookUrl,
         platformSessionLimit: user.platformSessionLimit,
+        agentLimit: user.agentLimit,
         createdAt: user.createdAt,
       },
     });
@@ -247,7 +257,7 @@ export const getUserById = async (req, res, next) => {
 // @route   PUT /api/users/:id
 export const updateUser = async (req, res, next) => {
   try {
-    const { name, role, isActive, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit } = req.body;
+    const { name, role, isActive, subscriptionType, subscriptionExpiry: bodyExpiry, subscriptionMonths, n8nWebhookUrl, platformSessionLimit, agentLimit } = req.body;
 
     const user = await User.findByPk(req.params.id);
     if (!user) {
@@ -277,6 +287,21 @@ export const updateUser = async (req, res, next) => {
       user.platformSessionLimit = parsed;
     } else if (role !== "customer") {
       user.platformSessionLimit = null;
+    }
+
+    // Limit AI agent (1-20 atau null = unlimited) hanya untuk customer
+    if (role === "customer" && agentLimit !== undefined) {
+      if (agentLimit === null || agentLimit === "") {
+        user.agentLimit = null; // unlimited
+      } else {
+        const parsed = parseInt(agentLimit, 10);
+        if (Number.isNaN(parsed) || parsed < 1 || parsed > 20) {
+          return next(new AppError("Limit AI Agent harus antara 1 dan 20 atau Unlimited.", 400));
+        }
+        user.agentLimit = parsed;
+      }
+    } else if (role !== "customer") {
+      user.agentLimit = null;
     }
 
     // Handle subscription expiry (only for customer)
@@ -354,6 +379,7 @@ export const updateUser = async (req, res, next) => {
         isTrial: user.isTrial ?? false,
         n8nWebhookUrl: user.n8nWebhookUrl,
         platformSessionLimit: user.platformSessionLimit,
+        agentLimit: user.agentLimit,
       },
     });
   } catch (error) {

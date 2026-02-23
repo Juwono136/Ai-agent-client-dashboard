@@ -78,6 +78,20 @@ export const getAgentByWa = async (req, res) => {
 // @route   POST /api/agents
 export const createAgent = async (req, res, next) => {
   try {
+    // 0. Enforce limit AI agent untuk customer (null = unlimited)
+    if (req.user.role === "customer" && req.user.agentLimit != null) {
+      const limit = req.user.agentLimit;
+      const currentCount = await Agent.count({ where: { userId: req.user.id } });
+      if (currentCount >= limit) {
+        return next(
+          new AppError(
+            `Anda telah mencapai batas AI Agent (${currentCount}/${limit}). Hubungi administrator untuk menambah limit.`,
+            403,
+          ),
+        );
+      }
+    }
+
     // 1. Handle Upload Welcome Image (Jika ada)
     let welcomeImageUrl = null;
     if (req.files && req.files["welcomeImage"]) {
@@ -208,6 +222,12 @@ export const getMyAgents = async (req, res, next) => {
       ? agents
       : agents.map((a) => ({ ...a.toJSON(), isActive: false }));
 
+    // Total jumlah agent (tanpa filter) untuk customer - dipakai frontend cek limit
+    const totalCount =
+      req.user.role === "customer"
+        ? await Agent.count({ where: { userId: req.user.id } })
+        : undefined;
+
     res.status(200).json({
       success: true,
       data,
@@ -218,6 +238,7 @@ export const getMyAgents = async (req, res, next) => {
         totalPages: totalPages,
         hasNextPage: pageNum < totalPages,
         hasPrevPage: pageNum > 1,
+        ...(totalCount !== undefined && { totalCount }),
       },
     });
   } catch (error) {

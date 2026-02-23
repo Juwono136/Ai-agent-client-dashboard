@@ -22,6 +22,11 @@ export const validateCreateUser = [
     .optional()
     .isInt({ min: 1, max: 10 })
     .withMessage("Limit koneksi platform harus antara 1 dan 10"),
+
+  body("agentLimit")
+    .optional({ values: "falsy" })
+    .custom((v) => v === "" || v === null || v === undefined || (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 20))
+    .withMessage("Limit AI Agent harus antara 1 dan 20 atau kosong (Unlimited)"),
 ];
 
 export const validateUpdateUser = [
@@ -42,6 +47,11 @@ export const validateUpdateUser = [
     .optional()
     .isInt({ min: 1, max: 10 })
     .withMessage("Limit koneksi platform harus antara 1 dan 10"),
+
+  body("agentLimit")
+    .optional({ values: "falsy" })
+    .custom((v) => v === "" || v === null || v === undefined || (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 20))
+    .withMessage("Limit AI Agent harus antara 1 dan 20 atau kosong (Unlimited)"),
 ];
 
 export const validateUserId = [param("id").isUUID().withMessage("Format ID User tidak valid")];

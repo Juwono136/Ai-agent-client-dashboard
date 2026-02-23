@@ -1,7 +1,8 @@
 import express from "express";
 import {
   login,
-  logout, // Tambahan: Import logout
+  logout,
+  getMe,
   forgotPassword,
   resetPasswordFinal,
   updatePassword,
@@ -41,6 +42,9 @@ router.put(
 );
 
 // --- Protected Routes (Butuh Login) ---
+
+// Get current user (data terbaru dari DB - agar setelah admin update, refresh halaman cukup)
+router.get("/me", protect, getMe);
 
 // Change Password: Cek Token Login -> Validasi Password Baru -> Update DB
 router.put("/change-password", protect, resetPasswordValidator, runValidation, updatePassword);

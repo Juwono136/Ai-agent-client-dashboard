@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink, FaPlug } from "react-icons/fa";
+import { FaTimes, FaUser, FaEnvelope, FaUserTag, FaCalendarAlt, FaLink, FaPlug, FaRobot } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 /** Validasi bahwa value adalah URL yang valid (harus http/https) */
@@ -36,6 +36,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
     subscriptionExpiryDate: "",
     n8nWebhookUrl: "",
     platformSessionLimit: 5,
+    agentLimit: 5,
   });
 
   useEffect(() => {
@@ -53,6 +54,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           subscriptionExpiryDate: existingExpiry,
           n8nWebhookUrl: initialData.n8nWebhookUrl || "",
           platformSessionLimit: initialData.platformSessionLimit ?? 5,
+          agentLimit: initialData.agentLimit != null ? initialData.agentLimit : "",
         });
       } else {
         setFormData({
@@ -64,9 +66,10 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
           subscriptionExpiryDate: "",
           n8nWebhookUrl: "",
           platformSessionLimit: 5,
+          agentLimit: 5,
         });
       }
-    }
+      }
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
@@ -110,6 +113,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
         delete payload.subscriptionMode;
       }
     }
+    // Unlimited = kirim null ke API
+    if (payload.agentLimit === "") payload.agentLimit = null;
     onSubmit(payload);
   };
 
@@ -340,6 +345,41 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }) =>
                 </div>
                 <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
                   *Maksimal jumlah koneksi WhatsApp (Connected Platform) yang boleh dibuat customer.
+                </span>
+              </div>
+            )}
+
+            {/* Limit AI Agent - Only for Customer */}
+            {formData.role === "customer" && (
+              <div className="form-control">
+                <label className="label text-xs font-bold text-[var(--color-text-muted)] uppercase">
+                  Limit AI Agent
+                </label>
+                <div className="relative">
+                  <div className="absolute z-10 inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
+                    <FaRobot />
+                  </div>
+                  <select
+                    className="select select-bordered w-full pl-10 rounded-xl bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]"
+                    value={formData.agentLimit === null || formData.agentLimit === undefined ? "" : formData.agentLimit}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData({
+                        ...formData,
+                        agentLimit: v === "" ? "" : parseInt(v, 10),
+                      });
+                    }}
+                  >
+                    <option value="">Unlimited</option>
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? "agent" : "agents"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                  *Maksimal jumlah AI Agent yang boleh dibuat customer. Pilih Unlimited untuk tanpa batas.
                 </span>
               </div>
             )}

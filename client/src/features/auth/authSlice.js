@@ -27,6 +27,17 @@ export const loginUser = createAsyncThunk("auth/login", async (user, thunkAPI) =
   }
 });
 
+// --- Get current user (refresh data dari DB, dipanggil saat load/refresh halaman) ---
+export const getMe = createAsyncThunk("auth/getMe", async (_, thunkAPI) => {
+  try {
+    return await authService.getMe();
+  } catch (error) {
+    const message =
+      (error.response && error.response.data && error.response.data.message) || error.message;
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 // --- Logout Thunk ---
 export const logoutUser = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
   try {
@@ -107,6 +118,18 @@ export const authSlice = createSlice({
         state.isError = true;
         state.message = action.payload; // Pesan error spesifik (ex: "Password salah")
         state.user = null;
+      })
+      // GetMe Cases (refresh data user tanpa re-login)
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.user = action.payload;
+        if (action.payload) {
+          localStorage.setItem("user", JSON.stringify(action.payload));
+        }
+      })
+      .addCase(getMe.rejected, (state) => {
+        // Token invalid/expired: clear session agar redirect ke login
+        state.user = null;
+        localStorage.removeItem("user");
       })
       // Logout Cases
       .addCase(logoutUser.fulfilled, (state) => {

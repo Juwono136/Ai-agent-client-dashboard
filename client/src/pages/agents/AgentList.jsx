@@ -145,6 +145,12 @@ const AgentList = () => {
   const isInitialLoad = isLoading && agents.length === 0;
   const isFiltering = isFilterLoading && agents.length > 0;
 
+  // Limit AI Agent (customer): null = unlimited, angka = batas
+  const agentLimit = user?.role === "customer" ? user.agentLimit : null;
+  const totalAgentCount = pagination?.totalCount ?? pagination?.total ?? 0;
+  const isAtAgentLimit =
+    agentLimit != null && totalAgentCount >= agentLimit;
+
   // Check subscription status
   const isSubscriptionExpired = (() => {
     if (user?.role !== "customer") return false;
@@ -161,12 +167,17 @@ const AgentList = () => {
           <p className="text-[var(--color-text-muted)] text-xs mt-0.5">
             Kelola asisten AI Agent{" "}
             <span className="font-semibold text-[var(--color-primary)]">({totalAgents})</span>
+            {agentLimit != null && (
+              <span className="ml-1 text-[var(--color-text-muted)]">
+                — Limit: {totalAgentCount}/{agentLimit} agent
+              </span>
+            )}
           </p>
         </div>
         <Link
           to="/ai-agents/create"
           className={`btn btn-sm border-none rounded-md gap-1.5 shadow-sm normal-case px-3 h-8 ${
-            isSubscriptionExpired
+            isSubscriptionExpired || isAtAgentLimit
               ? "bg-[var(--color-text-muted)] text-white cursor-not-allowed pointer-events-none"
               : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
           }`}
@@ -176,6 +187,13 @@ const AgentList = () => {
               toast.error("Langganan Anda telah berakhir. Silakan hubungi administrator.", {
                 id: "subscription-expired",
               });
+            }
+            if (isAtAgentLimit) {
+              e.preventDefault();
+              toast.error(
+                `Batas AI Agent tercapai (${totalAgentCount}/${agentLimit}). Hubungi admin untuk menambah limit.`,
+                { id: "agent-limit" },
+              );
             }
           }}
         >
@@ -223,7 +241,7 @@ const AgentList = () => {
               ? "Coba ubah filter atau kata kunci pencarian Anda."
               : "Mulai buat AI Agent pertamamu sekarang."}
           </p>
-          {!searchQuery && statusFilter === "all" && (
+          {!searchQuery && statusFilter === "all" && !isAtAgentLimit && (
             <Link
               to="/ai-agents/create"
               className="btn btn-sm bg-[var(--color-primary)] text-white normal-case hover:bg-[var(--color-primary-hover)]"

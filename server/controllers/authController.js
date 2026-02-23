@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import sendEmail from "../utils/emailService.js";
 import { getPasswordResetTemplate } from "../utils/emailTemplates.js";
-import { sendTokenResponse } from "../utils/tokenUtils.js";
+import { sendTokenResponse, buildUserPayload } from "../utils/tokenUtils.js";
 
 // --- Login User ---
 export const login = async (req, res, next) => {
@@ -47,6 +47,24 @@ export const logout = (req, res) => {
     success: true,
     message: "Berhasil logout.",
   });
+};
+
+// --- Get current user (untuk refresh data setelah admin update) ---
+export const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password", "resetPasswordToken", "resetPasswordExpire"] },
+    });
+    if (!user) {
+      return next(new AppError("User tidak ditemukan.", 404));
+    }
+    res.status(200).json({
+      success: true,
+      user: buildUserPayload(user),
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // --- Update Password (First Login / User Profile) ---
