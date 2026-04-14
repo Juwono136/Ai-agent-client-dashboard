@@ -1,5 +1,5 @@
 # vlow.ai — Full-Stack AI Agent Platform (WhatsApp + n8n + WAHA)
-
+![vlow-ai](https://github.com/user-attachments/assets/4ab6f41c-9891-4910-81a4-3590560ec2fe)
 
 **vlow.ai** is a startup product owned by the Client (from freelance job). The platform enables teams to provision **WhatsApp-connected AI Agents**, route events into **n8n workflows**, and manage users/subscriptions through an admin dashboard.
 
@@ -51,8 +51,8 @@ It ships with separate **Admin** and **Customer** workspaces to manage access, l
 
 This repository is a monorepo with two main services:
 
-- `**client/`**: React + Vite SPA (served via Nginx in production)
-- `**server/`**: Node.js + Express API (runs with PM2 in production container)
+- `client/`: React + Vite SPA (served via Nginx in production)
+- `server/`: Node.js + Express API (runs with PM2 in production container)
 
 Typical production flow:
 
@@ -68,8 +68,8 @@ Authentication uses **JWT** (cookie-based in production; API supports token flow
 ## Roles, access control, and subscription behavior
 
 - **Roles**
-  - `**admin`**: full access (user management, configuration, global views).
-  - `**customer`**: access limited to their own agents, platforms, and configuration.
+  - `admin`: full access (user management, configuration, global views).
+  - `customer`: access limited to their own agents, platforms, and configuration.
 - **Subscriptions**
   - Customers have a `subscriptionExpiry` (and optional trial).
   - When a subscription expires, the app treats agents/platforms as inactive and WAHA sessions may be stopped as part of enforcement.
@@ -336,4 +336,6 @@ Refer to `doc/DEPLOYMENT.md` for operational recommendations (logging, SSL, back
 
 <img width="1912" height="967" alt="image" src="https://github.com/user-attachments/assets/3eb7309e-c2ce-4144-a883-8ef14f337d26" />
 
+## Team Member
+- Juwono (https://www.linkedin.com/in/juwono136/)
 
