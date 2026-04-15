@@ -288,7 +288,7 @@ Refer to `doc/DEPLOYMENT.md` for operational recommendations (logging, SSL, back
 - `doc/DEPLOYMENT.md` — VPS production deployment guide
 
 ## Overview Web App
-### Workflow n8n (customable ai agent)
+### Workflow n8n (customizable ai agent)
 <img width="1910" height="961" alt="image" src="https://github.com/user-attachments/assets/e9f7cfa6-bbe8-40d0-b378-86c88ac0c4a1" />
 
 ### Login Page
