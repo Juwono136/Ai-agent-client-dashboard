@@ -1,7 +1,7 @@
 # vlow.ai — Full-Stack AI Agent Platform (WhatsApp + n8n + WAHA)
 ![vlow-ai](https://github.com/user-attachments/assets/4ab6f41c-9891-4910-81a4-3590560ec2fe)
 
-**vlow.ai** is a startup product owned by the Client (from freelance job). The platform enables teams to provision **WhatsApp-connected AI Agents**, route events into **n8n workflows**, and manage users/subscriptions through an admin dashboard.
+**vlow.ai** is a startup product owned by the Client (from freelance job). The platform enables teams to provision **WhatsApp-connected AI Agents**, route events into **n8n workflows**, and manage users/subscriptions through an admin dashboard. So basically, this application works in a way similar to cekat.ai, but it is designed to be simpler. vloa.ai is a simple SaaS-based web application for creating and customizing AI agents so they can be used as AI chatbots integrated with WhatsApp.
 
 ---
 
