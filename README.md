@@ -334,7 +334,7 @@ Refer to `doc/DEPLOYMENT.md` for operational recommendations (logging, SSL, back
 
 <img width="1912" height="966" alt="image" src="https://github.com/user-attachments/assets/2fb12ca3-72b2-45bf-a0cf-2ea7f2304f2d" />
 
-<img width="1912" height="967" alt="image" src="https://github.com/user-attachments/assets/3eb7309e-c2ce-4144-a883-8ef14f337d26" />
+<img width="1912" height="967" alt="578087866-3eb7309e-c2ce-4144-a883-8ef14f337d26" src="https://github.com/user-attachments/assets/37fefeba-efd0-4fc7-a63c-5ef0cc4e9385" />
 
 ## Team Member
 - Juwono (https://www.linkedin.com/in/juwono136/)
